@@ -4,7 +4,7 @@
 public class CarryableItem : Item
 {
     // 持たれたときの相対位置
-    public Vector3 attachOffset = new Vector3(0, 1f, 0.5f);
+    Vector3 attachOffset = new Vector3(0, 1f, 2f);
 
     // 持たれてるか
     protected bool isAttaching;

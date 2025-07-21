@@ -35,7 +35,7 @@ public static class PlayersController
         }
 
         // プレイヤー生成
-        GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(0, 0, 1), Quaternion.identity);
+        GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(0, GameController.defaultAxisY, 1), Quaternion.identity);
         if (playerObj == null)
         {
             MyDebug.Log("プレイヤー生成失敗");

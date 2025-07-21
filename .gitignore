@@ -103,5 +103,8 @@ InitTestScene*.unity*
 .vsconfig
 /Output/
 /[Aa]ssets/Scripts/Config.*
-/[Aa]ssets/TextMesh Pro/*
-/[Aa]ssets/Markus Art/*
+/[Aa]ssets/TextMesh Pro/
+/[Aa]ssets/Markus Art/
+/[Aa]ssets/FlexUnit/
+/[Aa]ssets/Lunar Landscape 3D/
+/[Aa]ssets/Real Stars Skybox/

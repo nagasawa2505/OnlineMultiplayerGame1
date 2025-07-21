@@ -114,7 +114,6 @@ public static class WebSocketClient
             {
                 await Task.Delay(IntervalMs);
                 timer += IntervalMs;
-                continue;
             }
 
             if (PlayersController.GetMyPlayer() == null)
