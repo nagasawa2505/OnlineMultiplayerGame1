@@ -12,6 +12,7 @@ public enum SyncState
 // 通信で同期されるものクラス
 public abstract class SynchronizedObject : MonoBehaviour
 {
+    [SerializeField]
     protected SyncState syncState;
 
     protected float positionThreshold = 0.05f;

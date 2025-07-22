@@ -5,7 +5,7 @@ public class CameraController : MonoBehaviour
     Transform myPlayer;
     public float offsetFront = 5f;
     public float offsetTop = 2.5f;
-    public float followSpeed = 10f;
+    public float followSpeed = 12f;
     public float rotateSpeed = 10f;
 
     // Start is called before the first frame update

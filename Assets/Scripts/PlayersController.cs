@@ -35,7 +35,7 @@ public static class PlayersController
         }
 
         // プレイヤー生成
-        GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(0, GameController.defaultAxisY, 1), Quaternion.identity);
+        GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(0, GameController.spawnAxisY, 1), Quaternion.identity);
         if (playerObj == null)
         {
             MyDebug.Log("プレイヤー生成失敗");
@@ -84,6 +84,9 @@ public static class PlayersController
         {
             dc.rot = new Vector4(rotation.x, rotation.y, rotation.z, rotation.w);
         }
+
+        // イベントをセット
+        dc.evt = myPlayer.GetEvent();
 
         // 持ち物があればセット
         CarryableItem carryable = myPlayer.GetCarryingItem();
@@ -144,6 +147,9 @@ public static class PlayersController
         {
             target.SetReceivedRotation(dc.rot);
         }
+
+        // イベントをセット
+        target.SetEvent(dc.evt);
 
         // 持ち物をセット
         if (dc.has == 0)

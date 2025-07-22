@@ -1,94 +1,52 @@
 ﻿using UnityEngine;
 
 // 持ち運べるアイテムクラス
-public class CarryableItem : Item
+public class CarryableItem : KickableItem
 {
     // 持たれたときの相対位置
-    Vector3 attachOffset = new Vector3(0, 1f, 2f);
-
-    // 持たれてるか
-    protected bool isAttaching;
-
-    // 同期を元に戻すまでの時間
-    protected float timerResetSyncState;
+    protected Vector3 attachOffset = new Vector3(0, 1f, 2f);
 
     // 捨てられたら戻る親元
     protected Transform originalParent;
 
-    protected Rigidbody rbody;
+    // 持たれてるか
+    protected bool isAttaching;
 
     // Start is called before the first frame update
     protected override void Start()
     {
         base.Start();
 
+        // 戻り先セット
         originalParent = transform.parent;
-
-        rbody = GetComponent<Rigidbody>();
-    }
-
-    // Update is called once per frame
-    protected override void Update()
-    {
-        base.Update();
-
-        if (timerResetSyncState > 0)
-        {
-            timerResetSyncState -= Time.deltaTime;
-        }
-        else
-        {
-            ResetSyncState();
-        }
-    }
-
-    protected override void FixedUpdate()
-    {
-        base.FixedUpdate();
-
-        if (isUpdated)
-        {
-            rbody.MovePosition(Vector3.Lerp(transform.position, receivedPosition, 0.25f));
-            rbody.MoveRotation(transform.localRotation = Quaternion.Slerp(transform.localRotation, receivedRotation, 0.25f));
-        }
-        isUpdated = false;
     }
 
     // 同期を元に戻す
-    protected virtual void ResetSyncState()
+    protected override void ResetSyncState()
     {
-        if (GetSyncState() == SyncState.Bidirectional)
+        if (syncState == SyncState.Bidirectional)
         {
             return;
         }
 
-        if (closePlayer != null)
+        if (!isAttaching && !isMoving && timerResetSyncState <= 0f)
         {
+            syncState = SyncState.Bidirectional;
+            timerResetSyncState = delayResetSyncState;
+
             return;
         }
 
-        if (isAttaching)
+        if (timerResetSyncState > 0)
         {
-            return;
+            timerResetSyncState -= Time.fixedDeltaTime;
         }
-
-        SetSyncState(SyncState.Bidirectional);
     }
 
-    // 親をプレイヤーにする
+    // プレイヤーに持たれる
     public void Attach(Player player)
     {
         isAttaching = true;
-
-        // 持ってるやつが送信して他は受信
-        if (player.IsMyself())
-        {
-            SetSyncState(SyncState.SendOnly);
-        }
-        else
-        {
-            SetSyncState(SyncState.ReceiveOnly);
-        }
 
         // 物理動作を切る
         rbody.isKinematic = true;
@@ -100,7 +58,7 @@ public class CarryableItem : Item
         transform.localPosition = attachOffset;
     }
 
-    // 親を元に戻す
+    // プレイヤーから捨てられる
     public void Dettach(Player player)
     {
         // 元の親の配下に戻る
@@ -110,9 +68,6 @@ public class CarryableItem : Item
         rbody.isKinematic = false;
 
         isAttaching = false;
-
-        // 後で同期を元に戻す
-        timerResetSyncState = 2f;
     }
 
     // 持たれてたら何もしない
@@ -122,12 +77,7 @@ public class CarryableItem : Item
         {
             return;
         }
-        base.OnTriggerEnter(other);
-    }
 
-    // 同期はタイマーで管理する
-    protected override void OnTriggerExit(Collider other)
-    {
-        closePlayer = null;
+        base.OnTriggerEnter(other);
     }
 }

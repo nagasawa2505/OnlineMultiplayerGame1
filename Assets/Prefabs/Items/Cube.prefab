@@ -120,7 +120,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75dcd90c55bb4db44bdf4d92a941c851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  attachOffset: {x: 0, y: 1, z: 0.5}
 --- !u!65 &4741566115159928687
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -150,7 +149,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6561953919815173771}
   serializedVersion: 4
-  m_Mass: 1
+  m_Mass: 10
   m_Drag: 0
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}

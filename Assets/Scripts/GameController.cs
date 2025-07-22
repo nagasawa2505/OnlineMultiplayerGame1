@@ -9,6 +9,8 @@ public class GameController : MonoBehaviour
 
     public static string activeSceneName;
 
+    public static float spawnAxisY = 20f;
+
     void Awake()
     {
         if (self != null && self != this)
@@ -83,7 +85,8 @@ public class GameController : MonoBehaviour
                 }
             case "Scene1":
                 {
-                    ItemsController.SpawnFieldItem(0, new Vector3(0, 0, 5), Vector3.zero, transform);
+                    ItemsController.SpawnFieldItem(0, new Vector3(0, spawnAxisY, 5), Vector3.zero, transform);
+                    //ItemsController.SpawnFieldItem(0, new Vector3(0, spawnAxisY, 5), Vector3.zero, transform);
                     break;
                 }
             case "Scene2":

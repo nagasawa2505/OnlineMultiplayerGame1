@@ -23,6 +23,7 @@ public class DataContainer
     public Vector3 pos;
     public Vector4 rot;
     public int has;
+    public PlayerEvent evt;
     public List<int> itmid;
     public List<int> itmidx;
     public List<Vector3> itmpos;
@@ -38,7 +39,7 @@ public static class WebSocketClient
     const string Host = Config.Host;
     const string Port = Config.Port;
     const int ReceiveBufSize = 1024;
-    const int IntervalMs = 50;
+    const int IntervalMs = 33;
     const int TimeoutSec = 10;
 
     static string clientId;

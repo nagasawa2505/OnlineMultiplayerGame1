@@ -1,26 +1,37 @@
 ﻿using UnityEngine;
 
+public enum PlayerEvent
+{
+    None,
+    Kicking
+}
+
 // プレイヤークラス
 public class Player : SynchronizedObject
 {
     string clientId;
     bool isMyself;
 
-    const float TimeoutSecReset = 1f;
-    float timerResetHasItem;
     float timerConnectionTimeout;
+    float timerResetHasItem;
 
-    Vector3 move;
-    float moveFactor = 3f;
-    float jumpFactor = 2f;
+    PlayerEvent currentEvent;
+    float timerResetEvent;
+
+    float sqrMoveThreshold = 0.01f;
+
+    float moveFactor = 10f;
+    float turnFactor = 128f;
+    float kickFactor = 200f;
 
     bool isInteractive;
-    bool isJumping;
+    bool isKick;
     bool hasItem;
 
     Rigidbody rbody;
     Collider otherCollider;
     CarryableItem carryingItem;
+    Animator animator;
 
     // Start is called before the first frame update
     protected override void Start()
@@ -32,6 +43,8 @@ public class Player : SynchronizedObject
         {
             rbody.isKinematic = true;
         }
+
+        animator = GetComponent<Animator>();
     }
 
     // Update is called once per frame
@@ -39,21 +52,30 @@ public class Player : SynchronizedObject
     {
         base.Update();
 
-        // この端末のプレイヤー
-        if (isMyself)
+        // なんか持ってるフラグ初期化チェック
+        if (hasItem)
         {
-            // 入力受付
-            SetInput();
+            if (timerResetHasItem > 0)
+            {
+                timerResetHasItem -= Time.deltaTime;
+            }
+            else
+            {
+                ResetHasItem();
+            }
         }
 
-        // なんか持ってるフラグ初期化チェック
-        if (timerResetHasItem > 0)
+        // キック中フラグ初期化チェック
+        if (currentEvent != PlayerEvent.None)
         {
-            timerResetHasItem -= Time.deltaTime;
-        }
-        else
-        {
-            ResetHasItem();
+            if (timerResetEvent > 0)
+            {
+                timerResetEvent -= Time.deltaTime;
+            }
+            else
+            {
+                ResetEvent();
+            }
         }
 
         // 通信切断チェック
@@ -63,7 +85,14 @@ public class Player : SynchronizedObject
         }
         else
         {
-            Timeout();
+            TimeoutConnection();
+        }
+
+        // この端末のプレイヤー
+        if (isMyself)
+        {
+            // 入力受付
+            SetInput();
         }
     }
 
@@ -74,22 +103,6 @@ public class Player : SynchronizedObject
         // この端末のプレイヤー
         if (isMyself)
         {
-            // ジャンプ状態を反映
-            if (isJumping)
-            {
-                float jumpVelocity = Mathf.Sqrt(2f * jumpFactor * Mathf.Abs(Physics.gravity.y));
-                rbody.velocity = new Vector3(rbody.velocity.x, jumpVelocity, rbody.velocity.z);
-                isJumping = false;
-            }
-
-            // 移動情報を反映
-            if (move != Vector3.zero)
-            {
-                Vector3 velocity = move * moveFactor;
-                rbody.velocity = new Vector3(velocity.x, rbody.velocity.y, velocity.z);
-                transform.rotation = Quaternion.LookRotation(move);
-            }
-
             // なんかするとき
             if (isInteractive)
             {
@@ -103,14 +116,31 @@ public class Player : SynchronizedObject
                     // 持つ
                     HoldItem();
                 }
-                isInteractive = false;
             }
+            isInteractive = false;
+
+            // なんか蹴るとき
+            if (isKick)
+            {
+                Kick();
+                currentEvent = PlayerEvent.Kicking;
+
+            }
+            isKick = false;
+
+            // アニメーション更新
+            animator.SetBool("isMoving", rbody.velocity.sqrMagnitude > sqrMoveThreshold);
+            animator.SetBool("isKicking", currentEvent == PlayerEvent.Kicking);
         }
         else
         {
             // 受信内容を反映
             transform.position = Vector3.Lerp(transform.position, receivedPosition, 0.25f);
             transform.localRotation = Quaternion.Slerp(transform.localRotation, receivedRotation, 0.25f);
+
+            // アニメーション更新
+            animator.SetBool("isMoving", IsMoving(transform.position, receivedPosition));
+            animator.SetBool("isKicking", currentEvent == PlayerEvent.Kicking);
         }
     }
 
@@ -138,21 +168,35 @@ public class Player : SynchronizedObject
     // プレイヤー操作
     void SetInput()
     {
-        // 入力を取得して移動情報をセット
-        float axisH = Input.GetAxisRaw("Horizontal");
-        float axisV = Input.GetAxisRaw("Vertical");
-        move = new Vector3(axisH, 0, axisV).normalized;
+        float axisH = Input.GetAxis("Horizontal");
+        transform.Rotate(0, axisH * turnFactor * Time.deltaTime, 0);
 
+        float axisV = Input.GetAxis("Vertical");
+        float moveZ = axisV > 0f ? axisV * moveFactor : 0;
+
+        Vector3 moveGlobal = transform.TransformDirection(new Vector3(0, rbody.velocity.y, moveZ));
+        rbody.velocity = moveGlobal;
+
+        // なんかアクション入力 
         if (Input.GetKeyDown(KeyCode.E))
         {
             isInteractive = true;
         }
 
-        // ジャンプ入力
-        if (Input.GetKeyDown(KeyCode.Space))
+        // キック入力
+        if (currentEvent != PlayerEvent.Kicking && Input.GetKeyDown(KeyCode.Space))
         {
-            isJumping = true;
+            isKick = true;
+            timerResetEvent = 0.5f;
         }
+    }
+
+    // 動いてるかを返す
+    public bool IsMoving(Vector3 pos1, Vector3 pos2)
+    {
+        float dx = pos1.x - pos2.x;
+        float dz = pos1.z - pos2.z;
+        return dx * dx + dz * dz > sqrMoveThreshold;
     }
 
     // 持ってる物を返す
@@ -217,7 +261,7 @@ public class Player : SynchronizedObject
         // 持ち物削除
         carryingItem = null;
 
-        timerResetHasItem = TimeoutSecReset;
+        timerResetHasItem = 1f;
     }
 
     // なんか持ってるフラグ初期化
@@ -239,8 +283,53 @@ public class Player : SynchronizedObject
         }
     }
 
+    protected void Kick()
+    {
+        if (otherCollider == null)
+        {
+            return;
+        }
+
+        KickableItem item = otherCollider.GetComponent<KickableItem>();
+        if (item == null)
+        {
+            return;
+        }
+
+        if (item.IsKicked())
+        {
+            return;
+        }
+
+        item.Kicked(this, kickFactor);
+    }
+
+    public void SetEvent(PlayerEvent evt)
+    {
+        switch (evt)
+        {
+            case PlayerEvent.None:
+                break;
+            case PlayerEvent.Kicking:
+                timerResetEvent = 0.5f;
+                break;
+        }
+        currentEvent = evt;
+    }
+
+    public PlayerEvent GetEvent()
+    {
+        return currentEvent;
+    }
+
+    // イベントフラグ初期化
+    void ResetEvent()
+    {
+        currentEvent = PlayerEvent.None;
+    }
+
     // 通信タイムアウト処理
-    void Timeout()
+    void TimeoutConnection()
     {
         if (IsMyself())
         {
