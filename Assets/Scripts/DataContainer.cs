@@ -12,7 +12,7 @@ public enum DataType : byte
 
 // JsonUtility
 // メンバがprivateだと値が初期値になる
-// クラスの変数名がJSONのキーになる
+// メンバの変数名がJSONのキーになる
 [Serializable]
 public class DataContainer
 {
@@ -20,7 +20,7 @@ public class DataContainer
     public string      k2; // クライアントID
     public ulong       k3; // プレイヤーの位置(16B * 3 + 空16B)
     public ulong       k4; // プレイヤーの回転(16B * 4)
-    public uint        k5; // プレイヤーの状態、対象アイテムID(8B * 2)
+    public ushort      k5; // プレイヤーの状態、対象アイテムID(8B * 2)
     public List<int>   k6; // アイテムID(複数)
     public List<int>   k7; // アイテムPrefabID(複数)
     public List<ulong> k8; // アイテムの位置(16B * 3 + 空16B)
@@ -76,18 +76,21 @@ public class DataContainer
 
     public void SetPlayerEventAndItem(PlayerEvent evt, int itemId)
     {
-        uint ue = (uint)evt;
-        uint ui = (uint)itemId;
+        ushort ue = (ushort)evt;
+        ushort ui = (ushort)itemId;
 
-        k5 = ue << 16 | ui;
+        k5 = (ushort)(ue << 8 | ui);
     }
 
     public (PlayerEvent evt, int itemId) GetPlayerEventAndItem()
     {
-        ushort uEvt = (ushort)((k5 >> 16) & 0xFF);
+        ushort uEvt = (ushort)((k5 >> 8) & 0xFF);
         ushort uItemId = (ushort)(k5 & 0xFF);
 
-        return ((PlayerEvent)uEvt, (int)uItemId);
+        byte bEvt = (byte)uEvt;
+        byte bItemId = (byte)uItemId;
+
+        return ((PlayerEvent)bEvt, (int)bItemId);
     }
 
     public void AddItemId(int itemId)
