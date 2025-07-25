@@ -1,34 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
-
-// 通信用JSONのctrlキーの値
-public enum JsonControlCode
-{
-    Normal, // 通常
-    Init,   // 初回通信
-    Duty,   // 共通処理担当
-}
-
-// JsonUtill用JSONクラス
-[Serializable]
-public class DataContainer
-{
-    public JsonControlCode ctrl;
-    public string cid;
-    public Vector3 pos;
-    public Vector4 rot;
-    public int has;
-    public PlayerEvent evt;
-    public List<int> itmid;
-    public List<int> itmidx;
-    public List<Vector3> itmpos;
-    public List<Vector4> itmrot;
-}
 
 // WebSocket通信制御クラス
 public static class WebSocketClient
@@ -39,7 +14,7 @@ public static class WebSocketClient
     const string Host = Config.Host;
     const string Port = Config.Port;
     const int ReceiveBufSize = 1024;
-    const int IntervalMs = 33;
+    const int IntervalMs = 20;
     const int TimeoutSec = 10;
 
     static string clientId;
@@ -162,21 +137,23 @@ public static class WebSocketClient
             DataContainer dc = JsonUtility.FromJson<DataContainer>(received);
             MyDebug.SetText(1, received);
 
-            switch (dc.ctrl)
+
+            DataType type = dc.GetDataType();
+            switch (type)
             {
                 // 通常の通信
-                case JsonControlCode.Normal:
+                case DataType.Normal:
                     // 受信内容を反映
                     SetReceivedData(dc);
                     break;
 
                 // 初回の通信
-                case JsonControlCode.Init:
+                case DataType.Init:
                     // サーバーから割り当てられた識別子をセット
-                    clientId = dc.cid;
+                    clientId = dc.GetClientId();
 
                     // この端末のプレイヤーを生成
-                    Player newPlayer = PlayersController.SpawnPlayer(dc.cid);
+                    Player newPlayer = PlayersController.SpawnPlayer(clientId);
                     if (newPlayer == null)
                     {
                         throw new Exception(MyDebug.Log("プレイヤー生成失敗"));
@@ -184,7 +161,7 @@ public static class WebSocketClient
                     break;
 
                 // 持ち回り当番の通信
-                case JsonControlCode.Duty:
+                case DataType.Duty:
                     isOnDuty = true;
                     break;
             }
@@ -195,7 +172,7 @@ public static class WebSocketClient
     static void SetSendData(DataContainer dc)
     {
         // クライアントIDセット
-        dc.cid = clientId;
+        dc.SetClientId(clientId);
 
         // プレイヤー情報セット
         PlayersController.SetSendData(dc);

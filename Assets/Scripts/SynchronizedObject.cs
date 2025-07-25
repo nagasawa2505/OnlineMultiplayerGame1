@@ -15,8 +15,8 @@ public abstract class SynchronizedObject : MonoBehaviour
     [SerializeField]
     protected SyncState syncState;
 
-    protected float positionThreshold = 0.05f;
-    protected float rotationThreshold = 0.5f;
+    protected float positionThreshold = 0.1f;
+    protected float rotationThreshold = 1f;
 
     protected Vector3 lastSentPosition;
     protected Quaternion lastSentRotation;
@@ -30,13 +30,18 @@ public abstract class SynchronizedObject : MonoBehaviour
         return;
     }
 
+    protected virtual void FixedUpdate()
+    {
+        return;
+    }
+
     // Update is called once per frame
     protected virtual void Update()
     {
         return;
     }
 
-    protected virtual void FixedUpdate()
+    protected virtual void LateUpdate()
     {
         return;
     }
@@ -86,8 +91,8 @@ public abstract class SynchronizedObject : MonoBehaviour
         receivedPosition = position;
     }
 
-    public virtual void SetReceivedRotation(Vector4 rotation)
+    public virtual void SetReceivedRotation(Quaternion rotation)
     {
-        receivedRotation = new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+        receivedRotation = rotation;
     }
 }

@@ -100,6 +100,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75dcd90c55bb4db44bdf4d92a941c851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncState: 0
+  angularDrag: 2
 --- !u!135 &1164427285378217389
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -140,7 +142,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.2
+  m_Radius: 1.25
   m_Center: {x: 0.09675062, y: 0.0230999, z: 0.002566427}
 --- !u!54 &2968726148604482657
 Rigidbody:

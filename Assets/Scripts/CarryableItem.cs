@@ -21,31 +21,28 @@ public class CarryableItem : KickableItem
         originalParent = transform.parent;
     }
 
-    // 同期を元に戻す
-    protected override void ResetSyncState()
+    protected override void FixedUpdate()
     {
-        if (syncState == SyncState.Bidirectional)
+        if (isAttaching)
         {
-            return;
+            ResetTimer();
         }
 
-        if (!isAttaching && !isMoving && timerResetSyncState <= 0f)
-        {
-            syncState = SyncState.Bidirectional;
-            timerResetSyncState = delayResetSyncState;
-
-            return;
-        }
-
-        if (timerResetSyncState > 0)
-        {
-            timerResetSyncState -= Time.fixedDeltaTime;
-        }
+        base.FixedUpdate();
     }
 
     // プレイヤーに持たれる
     public void Attach(Player player)
     {
+        if (player.IsMyself())
+        {
+            SetSyncState(SyncState.SendOnly);
+        }
+        else
+        {
+            SetSyncState(SyncState.ReceiveOnly);
+        }
+
         isAttaching = true;
 
         // 物理動作を切る

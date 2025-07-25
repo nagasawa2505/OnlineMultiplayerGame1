@@ -5,8 +5,7 @@ using UnityEngine;
 public static class PlayersController
 {
     static Dictionary<string, Player> players = new();
-    static Player myPlayer;
-    const float TimeoutSecExit = 10f;
+    static MyPlayer myPlayer;
 
     // プレイヤー生成
     public static Player SpawnPlayer(string clientId)
@@ -42,25 +41,26 @@ public static class PlayersController
             return null;
         }
 
-        // コンポーネント取得
-        Player player = playerObj.GetComponent<Player>();
-
-        // この端末のプレイヤーならセット
+        Player player;
         bool isMyself = clientId == thisClientId;
+
+        // 操作対象のプレイヤー
         if (isMyself)
         {
-            myPlayer = player;
+            player = playerObj.AddComponent<MyPlayer>();
+            myPlayer = (MyPlayer)player;
             MyDebug.SetText(0, $"player spawned cid={clientId} time={Time.time}", true);
         }
+        else
+        {
+            player = playerObj.AddComponent<OtherPlayer>();
+        }
 
-        // この端末のプレイヤーかをセット
+        // 操作対象かをセット
         player.SetIsMyself(isMyself);
 
         // クライアントIDをセット
         player.SetClientId(clientId);
-
-        // タイマーセット
-        player.SetExitTimer(TimeoutSecExit);
 
         // 管理対象に追加
         players.Add(clientId, player);
@@ -75,43 +75,26 @@ public static class PlayersController
         Vector3 position = myPlayer.transform.position;
         if (myPlayer.IsSentPositionChanged(ref position))
         {
-            dc.pos = position;
+            dc.SetPlayerPosition(position);
         }
 
         // 回転をセット
         Quaternion rotation = myPlayer.transform.localRotation;
         if (myPlayer.IsSentRotationChanged(ref rotation))
         {
-            dc.rot = new Vector4(rotation.x, rotation.y, rotation.z, rotation.w);
+            dc.SetPlayerRotation(rotation);
         }
 
-        // イベントをセット
-        dc.evt = myPlayer.GetEvent();
+        // イベント、対象アイテムIDをセット
+        Item eventItem = myPlayer.GetEventItem();
+        if (eventItem != null) {
+            dc.SetPlayerEventAndItem(myPlayer.GetPlayerEvent(), eventItem.GetItemId());
 
-        // 持ち物があればセット
-        CarryableItem carryable = myPlayer.GetCarryingItem();
-        dc.has = carryable != null ? carryable.GetItemId() : 0;
-
-        // 接してる物があればセット
-        Collider otherCollider = myPlayer.GetOtherCollder();
-        if (otherCollider != null)
-        {
-            Item item = otherCollider.GetComponent<Item>();
-            if (item != null)
-            {
-                dc.itmid = new();
-                dc.itmidx = new();
-                dc.itmpos = new();
-                dc.itmrot = new();
-
-                Vector3 itemPos = item.transform.position;
-                Quaternion itemRot = item.transform.localRotation;
-
-                dc.itmid.Add(item.GetItemId());
-                dc.itmidx.Add(item.GetPrefabId());
-                dc.itmpos.Add(itemPos);
-                dc.itmrot.Add(new Vector4(itemRot.x, itemRot.y, itemRot.z, itemRot.w));
-            }
+            // アイテム情報セット
+            dc.AddItemId(eventItem.GetItemId());
+            dc.AddItemPrefabId(eventItem.GetPrefabId());
+            dc.AddItemPosition(eventItem.transform.position);
+            dc.AddItemRotation(eventItem.transform.localRotation);
         }
 
         // 送信時の情報を保存しておく
@@ -122,47 +105,41 @@ public static class PlayersController
     // 受信内容をセット
     public static void SetReceivedData(DataContainer dc)
     {
-        Player target;
+        OtherPlayer player;
+        string clientId = dc.GetClientId();
+        Vector3 position = dc.GetPlayerPosition();
+        Quaternion rotation = dc.GetPlayerRotation();
+        (PlayerEvent evt, int itemId) = dc.GetPlayerEventAndItem();
 
         // 既存のプレイヤー
-        if (players.TryGetValue(dc.cid, out Player player))
+        if (players.TryGetValue(clientId, out Player existing))
         {
-            target = player;
+            player = (OtherPlayer)existing;
         }
         // 新しいプレイヤー
         else
         {
             // ルームのプレイヤーとして追加
-            target = SpawnPlayer(dc.cid);
+            player = (OtherPlayer)SpawnPlayer(clientId);
         }
 
         // 位置をセット
-        if (dc.pos != Vector3.zero)
+        if (position != Vector3.zero)
         {
-            target.SetReceivedPosition(dc.pos);
+            player.SetReceivedPosition(position);
         }
 
         // 回転をセット
-        if (dc.rot != Vector4.zero)
+        if (rotation != Quaternion.identity)
         {
-            target.SetReceivedRotation(dc.rot);
+            player.SetReceivedRotation(rotation);
         }
 
         // イベントをセット
-        target.SetEvent(dc.evt);
-
-        // 持ち物をセット
-        if (dc.has == 0)
-        {
-            target.DropItem();
-        }
-        else
-        {
-            target.HoldItem((CarryableItem)ItemsController.GetItem(dc.has));
-        }
+        player.SetPlayerEvent(evt, ItemsController.GetItem(itemId));
 
         // 通信切断検知タイマー更新
-        target.SetExitTimer(TimeoutSecExit);
+        player.ResetExitTimer();
     }
 
     // 通信が切れたプレイヤーを破棄
@@ -181,7 +158,7 @@ public static class PlayersController
         players.Remove(player.GetClientId());
     }
 
-    // この端末のプレイヤーを返す
+    // 操作対象のプレイヤーを返す
     public static Player GetMyPlayer()
     {
         return myPlayer;

@@ -85,8 +85,9 @@ public class GameController : MonoBehaviour
                 }
             case "Scene1":
                 {
-                    ItemsController.SpawnFieldItem(0, new Vector3(0, spawnAxisY, 5), Vector3.zero, transform);
-                    //ItemsController.SpawnFieldItem(0, new Vector3(0, spawnAxisY, 5), Vector3.zero, transform);
+                    //ItemsController.SpawnItem(0, new Vector3(0, spawnAxisY, 5), Vector3.zero, transform);
+                    ItemsController.SpawnItem(0, new Vector3(0, spawnAxisY, 5), Quaternion.identity, transform);
+                    //ItemsController.SpawnItem(0, new Vector3(0, spawnAxisY, 5), Vector3.zero, transform);
                     break;
                 }
             case "Scene2":

@@ -3,49 +3,63 @@
 // 蹴れるアイテムクラス
 public class KickableItem : Item
 {
-    bool isKicked;
-    public float angularDrag = 2f;
+    protected float angularDrag = 2f;
+    Player kickedPlayer;
+    int stopCheckCount;
 
     // Start is called before the first frame update
     protected override void Start()
     {
         base.Start();
 
-        // 同期状態を戻すタイミングを調整
-        delayResetSyncState = 1f;
-
         // 転がりやすさセット
         rbody.angularDrag = angularDrag;
     }
 
-    // 蹴られる
-    public void Kicked(Player player, float kickFactor)
+    protected override void FixedUpdate()
     {
-        isKicked = true;
+        base.FixedUpdate();
 
+        // 蹴られて停止した
+        if (kickedPlayer != null && !isMoving)
+        {
+            // 蹴られた直後に判定するのを避ける
+            if (stopCheckCount < 10)
+            {
+                stopCheckCount++;
+            }
+            else
+            {
+                kickedPlayer = null;
+            }
+        }
+    }
+
+    // 蹴られる
+    public virtual void Kicked(Player player, float kickFactor)
+    {
         if (player == null)
         {
             return;
         }
 
-        rbody.AddForce(player.transform.forward * kickFactor, ForceMode.Impulse);
-
-        isKicked = false;
-    }
-
-    // 蹴られてたら何もしない
-    protected override void OnTriggerEnter(Collider other)
-    {
-        if (isKicked)
+        if (player.IsMyself())
         {
-            return;
-        }
+            SetSyncState(SyncState.SendOnly);
+            rbody.AddForce(player.transform.forward * kickFactor, ForceMode.Impulse);
 
-        base.OnTriggerEnter(other);
+            // 誰に蹴られてるか保存しておく
+            kickedPlayer = player;
+            stopCheckCount = 0;
+        }
+        else
+        {
+            SetSyncState(SyncState.ReceiveOnly);
+        }
     }
 
-    public bool IsKicked()
+    public virtual Player GetKickedPlayer()
     {
-        return isKicked;
+        return kickedPlayer;
     }
 }

@@ -8,7 +8,7 @@ public static class ItemsController
     static Dictionary<int, Item> items = new();
 
     // アイテム生成
-    public static void SpawnFieldItem(int prefabIndex, Vector3 position, Vector3 rotation, Transform transform)
+    public static void SpawnItem(int prefabIndex, Vector3 position, Quaternion rotation, Transform transform)
     {
         // 生成対象のPrefabを取得
         GameObject prefab = PrefabStrage.GetItemByIndex(prefabIndex);
@@ -19,7 +19,7 @@ public static class ItemsController
         }
 
         // アイテム生成
-        GameObject obj = Object.Instantiate(prefab, position, Quaternion.Euler(rotation), transform);
+        GameObject obj = Object.Instantiate(prefab, position, rotation, transform);
         if (obj == null)
         {
             MyDebug.Log("アイテム生成失敗");
@@ -61,11 +61,6 @@ public static class ItemsController
     // 送信内容をセット
     public static void SetSendData(DataContainer dc)
     {
-        dc.itmid = new();
-        dc.itmidx = new();
-        dc.itmpos = new();
-        dc.itmrot = new();
-
         foreach (var (itemId, item) in items)
         {
             if (item == null)
@@ -86,10 +81,10 @@ public static class ItemsController
 
             if (item.IsSentPositionChanged(ref position) || item.IsSentRotationChanged(ref rotation))
             {
-                dc.itmid.Add(itemId);
-                dc.itmidx.Add(item.GetPrefabId());
-                dc.itmpos.Add(item.transform.position);
-                dc.itmrot.Add(new Vector4(rotation.x, rotation.y, rotation.z, rotation.w));
+                dc.AddItemId(itemId);
+                dc.AddItemPrefabId(item.GetPrefabId());
+                dc.AddItemPosition(item.transform.position);
+                dc.AddItemRotation(rotation);
 
                 item.SetLastSentPosition(position);
                 item.SetLastSentRotation(rotation);
@@ -100,12 +95,17 @@ public static class ItemsController
     // 受信内容をセット
     public static void SetReceivedData(DataContainer dc)
     {
-        for (int i = 0; i < dc.itmid.Count; i++)
+        List<int> ids = dc.GetItemIds();
+        List<int> prefabIds = dc.GetItemPrefabIds();
+        List<Vector3> positions = dc.GetItemPositions();
+        List<Quaternion> rotations = dc.GetItemRotations();
+
+        for (int i = 0; i < ids.Count; i++)
         {
-            int itemId = dc.itmid[i];
-            int index = dc.itmidx[i];
-            Vector3 position = dc.itmpos[i];
-            Vector4 rotation = dc.itmrot[i];
+            int itemId = ids[i];
+            int prefabId = prefabIds[i];
+            Vector3 position = positions[i];
+            Quaternion rotation = rotations[i];
 
             if (items.TryGetValue(itemId, out Item item))
             {
@@ -117,15 +117,10 @@ public static class ItemsController
                     continue;
                 }
 
-                // 位置をセット
+                // 位置と回転をセット
                 if (position != Vector3.zero)
                 {
                     item.SetReceivedPosition(position);
-                }
-
-                // 回転をセット
-                if (rotation != Vector4.zero)
-                {
                     item.SetReceivedRotation(rotation);
                 }
 
@@ -135,14 +130,19 @@ public static class ItemsController
             else
             {
                 // 管理対象外なら新たに生成
-                SpawnFieldItem(index, position, rotation, GameController.GetTransform());
+                SpawnItem(prefabId, position, rotation, GameController.GetTransform());
             }
         }
     }
 
     // アイテムを返す
-    public static Item GetItem(int id)
+    public static Item GetItem(int itemId)
     {
-        return items[id];
+        if (items.TryGetValue(itemId, out Item item))
+        {
+            return item;
+        }
+
+        return null;
     }
 }

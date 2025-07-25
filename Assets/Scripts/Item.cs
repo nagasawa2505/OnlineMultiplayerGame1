@@ -8,14 +8,13 @@ public class Item : SynchronizedObject
     protected bool isUpdated;
     protected bool isMoving;
 
-    protected float positionWeight = 0.75f;
-    protected float rotationWeight = 0.75f;
+    protected float positionWeight = 0.5f;
+    protected float rotationWeight = 0.25f;
 
-    protected float moveSqrThreshold = 0.01f;
-    protected float delayResetSyncState = 0f;
+    protected float moveSqrThreshold = 0.75f;
+    protected float delayResetSyncState = 5f;
     protected float timerResetSyncState;
 
-    protected Player closePlayer;
     protected Rigidbody rbody;
 
     // Start is called before the first frame update
@@ -26,77 +25,25 @@ public class Item : SynchronizedObject
         rbody = GetComponent<Rigidbody>();
     }
 
-    // Update is called once per frame
-    protected override void Update()
-    {
-        base.Update();
-    }
-
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
 
         // 動いてるフラグ更新
-        UpdateIsMoving();
-
-        // 同期状態を元に戻す
-        ResetSyncState();
-
-        // 受信内容をセット
-        ApplyReceivedData();
-    }
-
-    protected override void OnTriggerEnter(Collider other)
-    {
-        base.OnTriggerEnter(other);
-
-        // すでにプレイヤーセット済みなら終了
-        if (other == closePlayer)
-        {
-            return;
-        }
-
-        // プレイヤー取得
-        Player player = other.GetComponent<Player>();
-        if (player == null)
-        {
-            return;
-        }
-
-        // 同期状態を変更
-        if (player.IsMyself())
-        {
-            SetSyncState(SyncState.SendOnly);
-        }
-        else
-        {
-            SetSyncState(SyncState.ReceiveOnly);
-        }
-
-        // 最寄りのプレイヤーをセット
-        closePlayer = player;
-    }
-
-    protected override void OnTriggerExit(Collider other)
-    {
-        base.OnTriggerExit(other);
-
-        // 最寄りのプレイヤーを解除
-        closePlayer = null;
-
-        // 同期状態を元に戻す
-        timerResetSyncState = delayResetSyncState;
-    }
-
-    // 動いてるフラグ更新
-    protected virtual void UpdateIsMoving()
-    {
         isMoving = rbody.velocity.sqrMagnitude > moveSqrThreshold;
-    }
+        if (!isMoving)
+        {
+            if (timerResetSyncState > 0)
+            {
+                timerResetSyncState -= Time.fixedDeltaTime;
+            }
+            else
+            {
+                ResetSyncState();
+            }
+        }
 
-    // 受信内容が更新されてたらセット
-    protected virtual void ApplyReceivedData()
-    {
+        // 受信した内容をセット
         if (isUpdated)
         {
             rbody.MovePosition(Vector3.Lerp(transform.position, receivedPosition, positionWeight));
@@ -105,30 +52,31 @@ public class Item : SynchronizedObject
         isUpdated = false;
     }
 
+    // Update is called once per frame
+    protected override void Update()
+    {
+        base.Update();
+    }
+
+    protected override void LateUpdate()
+    {
+        base.LateUpdate();
+    }
+
     // 同期状態を元に戻す
     protected virtual void ResetSyncState()
     {
-        if (syncState == SyncState.Bidirectional)
-        {
-            return;
-        }
+        syncState = SyncState.Bidirectional;
+    }
 
-        if (!isMoving && timerResetSyncState <= 0f)
-        {
-            syncState = SyncState.Bidirectional;
-            timerResetSyncState = delayResetSyncState;
-
-            return;
-        }
-
-        if (timerResetSyncState > 0)
-        {
-            timerResetSyncState -= Time.fixedDeltaTime;
-        }
+    protected virtual void ResetTimer()
+    {
+        timerResetSyncState = delayResetSyncState;
     }
 
     public virtual void SetSyncState(SyncState state)
     {
+        ResetTimer();
         syncState = state;
     }
 
