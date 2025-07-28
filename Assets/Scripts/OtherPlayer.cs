@@ -3,10 +3,15 @@
 // 操作対象以外のプレイヤークラス
 public class OtherPlayer : Player
 {
-    float exitTimer;
     const float TimeoutSecExit = 10f;
-    bool isAnimeKicking;
-    int kickAnimeCount;
+    float exitTimer;
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        SetIsMyself(false);
+    }
 
     // Start is called before the first frame update
     protected override void Start()
@@ -20,19 +25,6 @@ public class OtherPlayer : Player
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
-
-        // 蹴るアニメ終了チェック
-        if (isAnimeKicking)
-        {
-            if (kickAnimeCount < 40)
-            {
-                kickAnimeCount++;
-            }
-            else
-            {
-                isAnimeKicking = false;
-            }
-        }
 
         // 通信切断チェック
         if (exitTimer > 0)
@@ -50,7 +42,8 @@ public class OtherPlayer : Player
 
         // アニメーション更新
         animator.SetBool("isMoving", IsMoving(transform.position, receivedPosition));
-        animator.SetBool("isKicking", isAnimeKicking);
+        animator.SetBool("isKicking", currentEvent == PlayerEvent.Kicking);
+        animator.SetBool("isThrowing", currentEvent == PlayerEvent.Throwing);
     }
 
     // 動いてるかを返す
@@ -61,43 +54,8 @@ public class OtherPlayer : Player
         return dx * dx + dz * dz > sqrMoveThreshold;
     }
 
-    // 物を持つ
-    protected override void HoldItem(CarryableItem carryingItem = null)
-    {
-        base.HoldItem(carryingItem);
-
-        if (carryingItem == null)
-        {
-            return;
-        }
-
-        isStopTimerResetEvent = true;
-
-        // プレイヤーの配下にする
-        carryingItem.Attach(this);
-    }
-
-    // 物を蹴る
-    protected override void KickItem()
-    {
-        base.KickItem();
-
-        if (otherCollider == null)
-        {
-            return;
-        }
-
-        KickableItem item = otherCollider.GetComponent<KickableItem>();
-        if (item == null)
-        {
-            return;
-        }
-
-        item.Kicked(this, kickFactor);
-    }
-
-    // イベントをセットして行動させる
-    public override void SetPlayerEvent(PlayerEvent evt, Item targetItem)
+    // 他端末から受信したイベントを反映
+    public virtual void SetReceivedPlayerEvent(PlayerEvent evt, Item targetItem)
     {
         switch (evt)
         {
@@ -114,10 +72,6 @@ public class OtherPlayer : Player
                 if (currentEvent != PlayerEvent.Kicking)
                 {
                     KickItem();
-
-                    // 蹴るアニメ開始
-                    isAnimeKicking = true;
-                    kickAnimeCount = 0;
                 }
                 break;
 
@@ -127,6 +81,15 @@ public class OtherPlayer : Player
                 if (currentEvent != PlayerEvent.Carrying)
                 {
                     HoldItem((CarryableItem)targetItem);  
+                }
+                break;
+
+            case PlayerEvent.Throwing:
+                timerResetEvent = 0.75f;
+                eventItem = targetItem;
+                if (currentEvent == PlayerEvent.Carrying)
+                {
+                    ThrowItem();
                 }
                 break;
         }

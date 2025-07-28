@@ -5,28 +5,36 @@ public enum PlayerEvent : int
     None,
     Kicking,
     Carrying,
+    Throwing,
 }
 
 // プレイヤークラス
 public abstract class Player : SynchronizedObject
 {
-    string clientId;
-
-    protected bool isMyself;
+    [SerializeField]
     protected PlayerEvent currentEvent;
-    protected float timerResetEvent;
-    protected bool isStopTimerResetEvent;
+    protected Item eventItem;
+
+    string clientId;
+    protected bool isMyself;
 
     protected float sqrMoveThreshold = 0.01f;
+
+    protected float timerResetEvent;
+    protected bool isStopTimerResetEvent;
 
     protected float moveFactor = 10f;
     protected float turnFactor = 128f;
     protected float kickFactor = 200f;
 
+    protected Collider otherCollider;
     protected Rigidbody rbody;
     protected Animator animator;
-    protected Collider otherCollider;
-    protected Item eventItem;
+
+    protected override void Awake()
+    {
+        base.Awake();
+    }
 
     // Start is called before the first frame update
     protected override void Start()
@@ -72,6 +80,17 @@ public abstract class Player : SynchronizedObject
 
         // 接してる物をセット
         otherCollider = other;
+
+        Player player = other.GetComponent<Player>();
+        if (player == null)
+        {
+            return;
+        }
+
+        if (currentEvent == PlayerEvent.Carrying)
+        {
+            ThrowItem();
+        }
     }
 
     protected override void OnTriggerExit(Collider other)
@@ -82,10 +101,60 @@ public abstract class Player : SynchronizedObject
         otherCollider = null;
     }
 
-    // 物を持つ
-    protected virtual void HoldItem(CarryableItem carryingItem = null)
+    // 物を蹴る
+    protected virtual Item KickItem()
     {
-        return;
+        if (otherCollider == null)
+        {
+            return null;
+        }
+
+        KickableItem item = otherCollider.GetComponent<KickableItem>();
+        if (item == null)
+        {
+            return null;
+        }
+
+        item.Kicked(this, kickFactor);
+
+        return item;
+    }
+
+    // 物を持つ
+    public virtual CarryableItem HoldItem(CarryableItem carryingItem = null)
+    {
+        CarryableItem item;
+
+        if (carryingItem == null)
+        {
+            // 接してる物が無ければ終了
+            if (otherCollider == null)
+            {
+                return null;
+            }
+
+            // 持てる物じゃなければ終了
+            item = otherCollider.GetComponent<CarryableItem>();
+            if (item == null)
+            {
+                return null;
+            }
+        }
+        else
+        {
+            item = carryingItem;
+        }
+
+        // プレイヤーの配下にする
+        if (!item.Attach(this))
+        {
+            return null;
+        }
+
+        // イベントの初期化を待たせる
+        isStopTimerResetEvent = true;
+
+        return item;
     }
 
     // 物を捨てる
@@ -98,21 +167,28 @@ public abstract class Player : SynchronizedObject
         }
 
         // アイテムの親を元に戻す
-        ((CarryableItem)eventItem).Dettach(this);
+        ((CarryableItem)eventItem).Dettach();
 
+        // イベント初期化を開始
         isStopTimerResetEvent = false;
     }
 
-    // 物を蹴る
-    protected virtual void KickItem()
+    // 物を投げ捨てる
+    protected virtual CarryableItem ThrowItem()
     {
-        return;
-    }
+        // 何も持ってなければ終了
+        if (eventItem == null)
+        {
+            return null;
+        }
 
-    // イベントをセット
-    public virtual void SetPlayerEvent(PlayerEvent evt, Item targetItem)
-    {
-        return;
+        // アイテムの親を元に戻す
+        ((CarryableItem)eventItem).Thrown(this);
+
+        // イベント初期化を開始
+        isStopTimerResetEvent = false;
+
+        return (CarryableItem)eventItem;
     }
 
     public virtual PlayerEvent GetPlayerEvent()

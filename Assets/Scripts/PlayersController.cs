@@ -10,6 +10,8 @@ public static class PlayersController
     // プレイヤー生成
     public static Player SpawnPlayer(string clientId)
     {
+        Player player;
+
         // 引数チェック
         if (string.IsNullOrEmpty(clientId))
         {
@@ -41,11 +43,8 @@ public static class PlayersController
             return null;
         }
 
-        Player player;
-        bool isMyself = clientId == thisClientId;
-
         // 操作対象のプレイヤー
-        if (isMyself)
+        if (clientId == thisClientId)
         {
             player = playerObj.AddComponent<MyPlayer>();
             myPlayer = (MyPlayer)player;
@@ -55,9 +54,6 @@ public static class PlayersController
         {
             player = playerObj.AddComponent<OtherPlayer>();
         }
-
-        // 操作対象かをセット
-        player.SetIsMyself(isMyself);
 
         // クライアントIDをセット
         player.SetClientId(clientId);
@@ -86,15 +82,23 @@ public static class PlayersController
         }
 
         // イベント、対象アイテムIDをセット
-        Item eventItem = myPlayer.GetEventItem();
-        if (eventItem != null) {
-            dc.SetPlayerEventAndItem(myPlayer.GetPlayerEvent(), eventItem.GetItemId());
-
-            // アイテム情報セット
-            dc.AddItemId(eventItem.GetItemId());
-            dc.AddItemPrefabId(eventItem.GetPrefabId());
-            dc.AddItemPosition(eventItem.transform.position);
-            dc.AddItemRotation(eventItem.transform.localRotation);
+        PlayerEvent evt = myPlayer.GetPlayerEvent();
+        if (evt == PlayerEvent.None)
+        {
+            dc.SetPlayerEventAndItem(evt, 0);
+        }
+        else
+        {
+            Item eventItem = myPlayer.GetEventItem();
+            if (eventItem != null)
+            {
+                int itemId = eventItem.GetItemId();
+                dc.SetPlayerEventAndItem(evt, itemId);
+                dc.AddItemId(itemId);
+                dc.AddItemPrefabId(eventItem.GetPrefabId());
+                dc.AddItemPosition(eventItem.transform.position);
+                dc.AddItemRotation(eventItem.transform.localRotation);
+            }
         }
 
         // 送信時の情報を保存しておく
@@ -136,7 +140,7 @@ public static class PlayersController
         }
 
         // イベントをセット
-        player.SetPlayerEvent(evt, ItemsController.GetItem(itemId));
+        player.SetReceivedPlayerEvent(evt, ItemsController.GetItem(itemId));
 
         // 通信切断検知タイマー更新
         player.ResetExitTimer();

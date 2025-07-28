@@ -5,15 +5,17 @@ public class Item : SynchronizedObject
 {
     protected int itemId;
     protected int prefabId;
+
+    public float groundCheckDistance;
+
     protected bool isUpdated;
     protected bool isMoving;
+    [SerializeField]
+    protected bool isGrounded;
 
-    protected float positionWeight = 0.5f;
-    protected float rotationWeight = 0.25f;
-
-    protected float moveSqrThreshold = 0.75f;
-    protected float delayResetSyncState = 5f;
-    protected float timerResetSyncState;
+    protected float positionWeight = 0.75f;
+    protected float rotationWeight = 0.75f;
+    protected float moveSqrThreshold;
 
     protected Rigidbody rbody;
 
@@ -21,6 +23,8 @@ public class Item : SynchronizedObject
     protected override void Start()
     {
         base.Start();
+
+        moveSqrThreshold = positionThreshold * positionThreshold;
 
         rbody = GetComponent<Rigidbody>();
     }
@@ -31,23 +35,15 @@ public class Item : SynchronizedObject
 
         // 動いてるフラグ更新
         isMoving = rbody.velocity.sqrMagnitude > moveSqrThreshold;
-        if (!isMoving)
-        {
-            if (timerResetSyncState > 0)
-            {
-                timerResetSyncState -= Time.fixedDeltaTime;
-            }
-            else
-            {
-                ResetSyncState();
-            }
-        }
+
+        // 接地フラグ更新
+        isGrounded = Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, groundCheckDistance + 0.1f);
 
         // 受信した内容をセット
         if (isUpdated)
         {
-            rbody.MovePosition(Vector3.Lerp(transform.position, receivedPosition, positionWeight));
-            rbody.MoveRotation(transform.localRotation = Quaternion.Slerp(transform.localRotation, receivedRotation, rotationWeight));
+            transform.position = Vector3.Lerp(transform.position, receivedPosition, positionWeight);
+            transform.localRotation = Quaternion.Slerp(transform.localRotation, receivedRotation, rotationWeight);
         }
         isUpdated = false;
     }
@@ -63,26 +59,53 @@ public class Item : SynchronizedObject
         base.LateUpdate();
     }
 
-    // 同期状態を元に戻す
-    protected virtual void ResetSyncState()
+    protected override void OnTriggerEnter(Collider other)
     {
-        syncState = SyncState.Bidirectional;
+        Player player = other.GetComponent<Player>();
+        if (player == null)
+        {
+            return;
+        }
+
+        if (!isGrounded)
+        {
+            return;
+        }
+
+        if (player.IsMyself())
+        {
+            SetSyncState(SyncState.SendOnly);
+        }
+        else
+        {
+            SetSyncState(SyncState.ReceiveOnly);
+        }
     }
 
-    protected virtual void ResetTimer()
+    protected override void OnTriggerExit(Collider other)
     {
-        timerResetSyncState = delayResetSyncState;
+        return;
     }
 
-    public virtual void SetSyncState(SyncState state)
+    public override void SetSyncState(SyncState state = SyncState.Bidirectional)
     {
-        ResetTimer();
-        syncState = state;
-    }
+        base.SetSyncState(state);
 
-    public virtual SyncState GetSyncState()
-    {
-        return syncState;
+        switch (state)
+        {
+            case SyncState.Bidirectional:
+                rbody.isKinematic = false;
+                break;
+            case SyncState.SendOnly:
+                rbody.isKinematic = false;
+                break;
+            case SyncState.ReceiveOnly:
+                rbody.isKinematic = true;
+                break;
+            default:
+                rbody.isKinematic = false;
+                break;
+        }
     }
 
     public virtual void SetIsUpdated(bool either)

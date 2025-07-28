@@ -59,7 +59,7 @@ public static class ItemsController
     }
 
     // 送信内容をセット
-    public static void SetSendData(DataContainer dc)
+    public static void SetSendData(DataContainer dc, bool isOnDuty)
     {
         foreach (var (itemId, item) in items)
         {
@@ -69,26 +69,33 @@ public static class ItemsController
                 continue;
             }
 
-            // 送信対象外ならとばす
+            // 同期状態を取得
             SyncState state = item.GetSyncState();
-            if (state == SyncState.ReceiveOnly || state == SyncState.None)
+
+            // 当番なら担当なし以外はとばす
+            if (isOnDuty)
             {
-                continue;
+                if (state != SyncState.Bidirectional)
+                {
+                    continue;
+                }
+            }
+            // 自分の担当分以外はとばす
+            else
+            {
+                if (state != SyncState.SendOnly)
+                {
+                    continue;
+                }
             }
 
+            // 送信内容セット
             Vector3 position = item.transform.position;
             Quaternion rotation = item.transform.localRotation;
-
-            if (item.IsSentPositionChanged(ref position) || item.IsSentRotationChanged(ref rotation))
-            {
-                dc.AddItemId(itemId);
-                dc.AddItemPrefabId(item.GetPrefabId());
-                dc.AddItemPosition(item.transform.position);
-                dc.AddItemRotation(rotation);
-
-                item.SetLastSentPosition(position);
-                item.SetLastSentRotation(rotation);
-            }
+            dc.AddItemId(itemId);
+            dc.AddItemPrefabId(item.GetPrefabId());
+            dc.AddItemPosition(item.transform.position);
+            dc.AddItemRotation(rotation);
         }
     }
 

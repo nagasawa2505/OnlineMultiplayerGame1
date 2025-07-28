@@ -13,9 +13,9 @@ public enum SyncState
 public abstract class SynchronizedObject : MonoBehaviour
 {
     [SerializeField]
-    protected SyncState syncState;
+    SyncState syncState;
 
-    protected float positionThreshold = 0.1f;
+    protected float positionThreshold = 0.01f;
     protected float rotationThreshold = 1f;
 
     protected Vector3 lastSentPosition;
@@ -23,6 +23,11 @@ public abstract class SynchronizedObject : MonoBehaviour
 
     protected Vector3 receivedPosition;
     protected Quaternion receivedRotation;
+
+    protected virtual void Awake()
+    {
+        return;
+    }
 
     // Start is called before the first frame update
     protected virtual void Start()
@@ -94,5 +99,15 @@ public abstract class SynchronizedObject : MonoBehaviour
     public virtual void SetReceivedRotation(Quaternion rotation)
     {
         receivedRotation = rotation;
+    }
+
+    public virtual void SetSyncState(SyncState state = SyncState.Bidirectional)
+    {
+        syncState = state;
+    }
+
+    public virtual SyncState GetSyncState()
+    {
+        return syncState;
     }
 }

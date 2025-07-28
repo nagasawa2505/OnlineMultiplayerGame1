@@ -137,7 +137,6 @@ public static class WebSocketClient
             DataContainer dc = JsonUtility.FromJson<DataContainer>(received);
             MyDebug.SetText(1, received);
 
-
             DataType type = dc.GetDataType();
             switch (type)
             {
@@ -177,11 +176,14 @@ public static class WebSocketClient
         // プレイヤー情報セット
         PlayersController.SetSendData(dc);
 
+        // アイテム情報セット
+        ItemsController.SetSendData(dc, false);
+
         // 持ち回り当番
         if (isOnDuty)
         {
-            // アイテム情報セット
-            ItemsController.SetSendData(dc);
+            // 迷子アイテム情報セット
+            ItemsController.SetSendData(dc, true);
 
             isOnDuty = false;
         }

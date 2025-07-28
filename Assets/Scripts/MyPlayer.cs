@@ -5,25 +5,17 @@ public class MyPlayer : Player
 {
     bool isInteractive;
     bool isKick;
-    bool isAnimeKicking;
-    int kickAnimeCount;
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        SetIsMyself(true);
+    }
 
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
-
-        // 蹴るアニメ終了チェック
-        if (isAnimeKicking)
-        {
-            if (kickAnimeCount < 40)
-            {
-                kickAnimeCount++;
-            }
-            else
-            {
-                isAnimeKicking = false;
-            }
-        }
 
         if (isInteractive)
         {
@@ -42,30 +34,18 @@ public class MyPlayer : Player
 
         if (isKick)
         {
-            // 蹴る
-            KickItem();
-
-            // 蹴るアニメ開始
-            isAnimeKicking = true;
-            kickAnimeCount = 0;
+            if (currentEvent != PlayerEvent.Carrying)
+            {
+                // 蹴る
+                KickItem();
+            }
         }
         isKick = false;
 
-        // 蹴った物情報の送信を止める
-        if (isStopTimerResetEvent && currentEvent == PlayerEvent.Kicking)
-        {
-            Player player = ((KickableItem)eventItem).GetKickedPlayer();
-            {
-                if (player == null || player != this)
-                {
-                    isStopTimerResetEvent = false;
-                }
-            }
-        }
-
         // アニメーション更新
         animator.SetBool("isMoving", rbody.velocity.sqrMagnitude > sqrMoveThreshold);
-        animator.SetBool("isKicking", isAnimeKicking);
+        animator.SetBool("isKicking", currentEvent == PlayerEvent.Kicking);
+        animator.SetBool("isThrowing", currentEvent == PlayerEvent.Throwing);
     }
 
     // Update is called once per frame
@@ -86,6 +66,22 @@ public class MyPlayer : Player
         float axisV = Input.GetAxis("Vertical");
         float moveZ = axisV > 0f ? axisV * moveFactor : 0;
 
+        if (moveZ != 0)
+        {
+            switch (currentEvent)
+            {
+                case PlayerEvent.Carrying:
+                    moveZ *= 0.5f;
+                    break;
+                case PlayerEvent.Kicking:
+                    moveZ *= 0.5f;
+                    break;
+                case PlayerEvent.Throwing:
+                    moveZ *= 0.25f;
+                    break;
+            }
+        }
+
         Vector3 moveGlobal = transform.TransformDirection(new Vector3(0, rbody.velocity.y, moveZ));
         rbody.velocity = moveGlobal;
 
@@ -96,68 +92,52 @@ public class MyPlayer : Player
         }
 
         // キック入力
-        if (currentEvent != PlayerEvent.Kicking && Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             isKick = true;
         }
     }
 
     // 物を持つ
-    protected override void HoldItem(CarryableItem carryingItem = null)
+    public override CarryableItem HoldItem(CarryableItem carryingItem = null)
     {
-        base.HoldItem(carryingItem);
-
-        // 接してる物が無ければ終了
-        if (otherCollider == null)
+        CarryableItem item = base.HoldItem(carryingItem);
+        if (item != null)
         {
-            return;
+            // イベント更新
+            SetSendPlayerEvent(PlayerEvent.Carrying, item);
         }
 
-        // 持てる物じゃなければ終了
-        CarryableItem item = otherCollider.GetComponent<CarryableItem>();
-        if (item == null)
-        {
-            return;
-        }
-
-        // プレイヤーの配下にする
-        item.Attach(this);
-
-        isStopTimerResetEvent = true;
-
-        // イベント更新
-        SetPlayerEvent(PlayerEvent.Carrying, item);
+        return item;
     }
 
     // 物を蹴る
-    protected override void KickItem()
+    protected override Item KickItem()
     {
-        base.KickItem();
-
-        if (otherCollider == null)
-        {
-            return;
-        }
-
-        KickableItem item = otherCollider.GetComponent<KickableItem>();
-        if (item == null)
-        {
-            return;
-        }
-
-        item.Kicked(this, kickFactor);
-
-        isStopTimerResetEvent = true;
+        Item item = base.KickItem();
 
         // イベント更新
-        SetPlayerEvent(PlayerEvent.Kicking, item);
+        SetSendPlayerEvent(PlayerEvent.Kicking, item);
+
+        return item;
     }
 
-    // 行動に対応するイベントをセット
-    public override void SetPlayerEvent(PlayerEvent evt, Item item)
+    // 物を投げ捨てる
+    protected override CarryableItem ThrowItem()
     {
-        base.SetPlayerEvent(evt, item);
+        CarryableItem item = base.ThrowItem();
+        if (item != null)
+        {
+            // イベント更新
+            SetSendPlayerEvent(PlayerEvent.Throwing, item);
+        }
 
+        return item;
+    }
+
+    // 他端末に送信するイベントをセット
+    public virtual void SetSendPlayerEvent(PlayerEvent evt, Item item)
+    {
         switch (evt)
         {
             case PlayerEvent.None:
@@ -170,6 +150,11 @@ public class MyPlayer : Player
 
             case PlayerEvent.Carrying:
                 timerResetEvent = 0.5f;
+                eventItem = item;
+                break;
+
+            case PlayerEvent.Throwing:
+                timerResetEvent = 0.75f;
                 eventItem = item;
                 break;
         }
