@@ -2,14 +2,42 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public enum GameState
+{
+    Wait,
+    Start,
+    End,
+}
+
+public enum GameResult
+{
+    None,
+    Win,
+    Lose,
+    Draw
+}
+
 // アプリケーション管理クラス
 public class GameController : MonoBehaviour
 {
     static GameController self;
 
-    public static string activeSceneName;
+    [SerializeField]
+    GameState gameState;
 
-    public static float spawnAxisY = 20f;
+    [SerializeField]
+    string clientId;
+
+    [SerializeField]
+    int roomNumber;
+
+    [SerializeField]
+    int playerNumber;
+
+    [SerializeField]
+    int teamNumber;
+
+    public static float spawnAxisY = 5f;
 
     void Awake()
     {
@@ -20,83 +48,32 @@ public class GameController : MonoBehaviour
         }
         self = this;
         DontDestroyOnLoad(gameObject);
-
-        // 現在のシーン名をセット
-        activeSceneName = SceneManager.GetActiveScene().name;
-
-        try
-        {
-            // WebSocket通信開始
-            WebSocketClient.StartConnection();
-        }
-        catch (Exception e)
-        {
-            MyDebug.Log(e.Message);
-            Application.Quit();
-        }
-
-        // アイテム掃除
-        ItemsController.Clear();
     }
 
-    void Start()
-    {
-        MakeSceneField();
-    }
-
-    void FixedUpdate()
-    {
-
-    }
-
-    void Update()
-    {
-        
-    }
-    void LateUpdate()
-    {
-
-    }
-
-    private void OnDestroy()
-    {
-
-    }
-
-    void OnApplicationQuit()
+    private void OnApplicationQuit()
     {
         // WebSocket接続終了
         WebSocketClient.EndConnection();
     }
 
-    // アプリケーションのフォーカス取得、喪失時
-    void OnApplicationFocus(bool focus)
+    // シーン毎にアイテムを生成
+    static void MakeScene()
     {
-
-    }
-
-    void MakeSceneField()
-    {
+        string activeSceneName = SceneManager.GetActiveScene().name;
         switch (activeSceneName)
         {
-            case "title":
+            case "Title":
                 {
                     break;
                 }
             case "Scene1":
                 {
-                    ItemsController.SpawnItem(0, new Vector3(0, spawnAxisY, 5), Quaternion.identity, transform);
-                    ItemsController.SpawnItem(1, new Vector3(0, spawnAxisY, 5), Quaternion.identity, transform);
-                    ItemsController.SpawnItem(2, new Vector3(0, spawnAxisY, 5), Quaternion.identity, transform);
-                    
-                    break;
-                }
-            case "Scene2":
-                {
-                    break;
-                }
-            case "Scene3":
-                {
+                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-15, 15),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-15, 15),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-20, 20),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-20, 20),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(2, new Vector3(UnityEngine.Random.Range(-10, 10),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
+
                     break;
                 }
             default:
@@ -106,8 +83,128 @@ public class GameController : MonoBehaviour
         }
     }
 
+    // 初回通信に成功したとき
+    public static void SpawnMyPlayer(string cid)
+    {
+        self.clientId = cid;
+
+        string[] s = cid.Split('-');
+        self.roomNumber = int.Parse(s[0]);
+        self.playerNumber = int.Parse(s[1]);
+        self.teamNumber = GetTeamNumber(cid);
+
+        // この端末のプレイヤーを生成
+        Player newPlayer = PlayersController.SpawnPlayer(self.clientId);
+        if (newPlayer == null)
+        {
+            throw new Exception(MyDebug.Log("プレイヤー生成失敗"));
+        }
+    }
+
+    // 参加人数を選択したとき
+    static void StartScene(int playerCount, string sceneName)
+    {
+        try
+        {
+            // WebSocket通信開始
+            WebSocketClient.StartConnection(playerCount);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+            Application.Quit();
+        }
+
+        // 前ゲームの掃除
+        ClearSceneData();
+
+        // シーン移動
+        SceneManager.LoadScene(sceneName);
+    }
+
+    public static void StartScene2P()
+    {
+        StartScene(2, "Scene1");
+    }
+
+    public static void StartScene4P()
+    {
+        StartScene(4, "Scene1");
+    }
+
+    public static void StartScene8P()
+    {
+        StartScene(8, "Scene1");
+    }
+
+    // 参加人数が集まったとき
+    public static void StartGame()
+    {
+        self.Invoke("SetGameStateStart", 3f);
+
+        // 1人目に準備してもらう
+        if (self.playerNumber == 1)
+        {
+            MakeScene();
+        }
+    }
+
+    // 試合が終了したとき
+    public static void EndGame()
+    {
+        self.gameState = GameState.End;
+
+        // WebSocket接続終了
+        WebSocketClient.EndConnection();
+    }
+
+    static void ClearSceneData()
+    {
+        // プレイヤー初期化
+        PlayersController.Clear();
+
+        // アイテム掃除
+        ItemsController.Clear();
+
+        foreach (Transform child in self.transform)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    public static int GetTeamNumber(string clientId)
+    {
+        string[] s = clientId.Split('-');
+        return int.Parse(s[1]) % 2 == 1 ? 1 : 2;
+    }
+
     public static Transform GetTransform()
     {
         return self.transform;
+    }
+
+    public static GameState GetGameState()
+    {
+        return self.gameState;
+    }
+
+    public static string GetClientId()
+    {
+        return self.clientId;
+    }
+
+    public static int GetTeamNumber()
+    {
+        return self.teamNumber;
+    }
+
+    public static void SetGameState(GameState state)
+    {
+        self.gameState = state;
+    }
+
+    void SetGameStateStart()
+    {
+        self.gameState = GameState.Start;
     }
 }

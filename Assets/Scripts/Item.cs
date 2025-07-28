@@ -6,6 +6,7 @@ public class Item : SynchronizedObject
     protected int itemId;
     protected int prefabId;
 
+    public int points;
     public float groundCheckDistance;
 
     protected bool isUpdated;

@@ -17,11 +17,10 @@ public static class WebSocketClient
     const int IntervalMs = 20;
     const int TimeoutSec = 10;
 
-    static string clientId;
     static bool isOnDuty;
 
     // 双方向通信開始
-    public static async void StartConnection()
+    public static async void StartConnection(int playerCount)
     {
         // 通信中なら終了
         if (ws != null)
@@ -33,7 +32,7 @@ public static class WebSocketClient
         cancel = new CancellationTokenSource();
 
         // サーバーに接続
-        await ws.ConnectAsync(new Uri($"ws://{Host}:{Port}/ws/"), cancel.Token);
+        await ws.ConnectAsync(new Uri($"ws://{Host}:{Port}/ws/{playerCount}"), cancel.Token);
 
         // 送信ループ
         _ = SendLoop().ContinueWith(t =>
@@ -104,7 +103,6 @@ public static class WebSocketClient
             // JSON作成
             string json = JsonUtility.ToJson(dc);
             byte[] buffer = Encoding.UTF8.GetBytes(json);
-            MyDebug.SetText(2, json);
 
             // 送信
             await ws.SendAsync(new ArraySegment<byte>(buffer), WebSocketMessageType.Text, true, cancel.Token);
@@ -135,7 +133,6 @@ public static class WebSocketClient
             // FromJsonはエラーハンドリングできないので要注意
             string received = Encoding.UTF8.GetString(buffer, 0, result.Count);
             DataContainer dc = JsonUtility.FromJson<DataContainer>(received);
-            MyDebug.SetText(1, received);
 
             DataType type = dc.GetDataType();
             switch (type)
@@ -148,20 +145,17 @@ public static class WebSocketClient
 
                 // 初回の通信
                 case DataType.Init:
-                    // サーバーから割り当てられた識別子をセット
-                    clientId = dc.GetClientId();
-
-                    // この端末のプレイヤーを生成
-                    Player newPlayer = PlayersController.SpawnPlayer(clientId);
-                    if (newPlayer == null)
-                    {
-                        throw new Exception(MyDebug.Log("プレイヤー生成失敗"));
-                    }
+                    GameController.SpawnMyPlayer(dc.GetClientId());
                     break;
 
                 // 持ち回り当番の通信
                 case DataType.Duty:
                     isOnDuty = true;
+                    break;
+
+                // 試合開始
+                case DataType.Start:
+                    GameController.StartGame();
                     break;
             }
         }
@@ -171,7 +165,7 @@ public static class WebSocketClient
     static void SetSendData(DataContainer dc)
     {
         // クライアントIDセット
-        dc.SetClientId(clientId);
+        dc.SetClientId(GameController.GetClientId());
 
         // プレイヤー情報セット
         PlayersController.SetSendData(dc);
@@ -197,11 +191,5 @@ public static class WebSocketClient
 
         // アイテム情報セット
         ItemsController.SetReceivedData(dc);
-    }
-
-    // このクライアントの通信用IDを返す
-    public static string GetClientId()
-    {
-        return clientId;
     }
 }

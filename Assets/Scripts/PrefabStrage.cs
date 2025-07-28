@@ -34,9 +34,9 @@ public class PrefabStrage : MonoBehaviour
         }
     }
 
-    public static GameObject GetDefaultPlayer()
+    public static GameObject GetPlayer(int teamNumber)
     {
-        return self.players[0];
+        return self.players[teamNumber - 1];
     }
 
     public static GameObject GetPlayerByIndex(int index)

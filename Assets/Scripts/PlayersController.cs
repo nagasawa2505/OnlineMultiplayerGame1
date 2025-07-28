@@ -20,7 +20,7 @@ public static class PlayersController
         }
 
         // 通信用クライアントIDチェック
-        string thisClientId = WebSocketClient.GetClientId();
+        string thisClientId = GameController.GetClientId();
         if (string.IsNullOrEmpty(thisClientId))
         {
             MyDebug.Log("クライアントID未割り当て");
@@ -28,15 +28,21 @@ public static class PlayersController
         }
 
         // Prefab取得
-        GameObject playerPrefab = PrefabStrage.GetDefaultPlayer();
+        int teamNum = GameController.GetTeamNumber(clientId);
+        GameObject playerPrefab = PrefabStrage.GetPlayer(teamNum);
         if (playerPrefab == null)
         {
             MyDebug.Log("Prefab取得失敗");
             return null;
         }
 
+        // プレイヤーの位置、向きをチーム毎に調整
+        Quaternion playerRotation = teamNum % 2 == 0 ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
+        float playerPosZ = teamNum % 2 == 0 ? UnityEngine.Random.Range(0, 5) : UnityEngine.Random.Range(-5, 0);
+
         // プレイヤー生成
-        GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(0, GameController.spawnAxisY, 1), Quaternion.identity);
+        GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(
+            UnityEngine.Random.Range(-5, 5), GameController.spawnAxisY, playerPosZ), playerRotation);
         if (playerObj == null)
         {
             MyDebug.Log("プレイヤー生成失敗");
@@ -48,7 +54,6 @@ public static class PlayersController
         {
             player = playerObj.AddComponent<MyPlayer>();
             myPlayer = (MyPlayer)player;
-            MyDebug.SetText(0, $"player spawned cid={clientId} time={Time.time}", true);
         }
         else
         {
@@ -166,5 +171,18 @@ public static class PlayersController
     public static Player GetMyPlayer()
     {
         return myPlayer;
+    }
+
+    public static void Clear()
+    {
+        foreach (var (clientId, player) in players)
+        {
+            if (player != null)
+            {
+                Object.Destroy(player);
+            }
+        }
+        myPlayer = null;
+        players.Clear();
     }
 }

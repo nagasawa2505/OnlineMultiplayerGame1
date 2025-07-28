@@ -8,6 +8,7 @@ public enum DataType : byte
     Normal,
     Init,
     Duty,
+    Start,
 }
 
 // JsonUtility

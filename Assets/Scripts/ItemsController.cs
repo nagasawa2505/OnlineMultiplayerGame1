@@ -65,7 +65,6 @@ public static class ItemsController
         {
             if (item == null)
             {
-                MyDebug.Log("アイテム破棄済み");
                 continue;
             }
 
