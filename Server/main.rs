@@ -2,7 +2,8 @@ use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         Extension,
-        connect_info::ConnectInfo
+        connect_info::ConnectInfo,
+        Path
     },
     routing::get,
     Router,
@@ -44,21 +45,15 @@ type Clients = HashMap<String, Tx>;
 #[derive(Default)]
 struct Room {
     clients: Clients,
-    player_idx: u8,
-    match_time_sec: usize,
+    capacity: usize,
     idx_on_duty: usize,
 }
 // ルームを番号 -> ルーム構造体型
 type Rooms = Arc<RwLock<HashMap<u8, Room>>>;
 
-type NumOfRooms = u8;   // ルーム数用
-type NumOfClients = u8; // クライアント数用
-
+type NumOfRooms = u8;   // ルーム数上限用
 const MAX_NUM_ROOMS: NumOfRooms = 255;   // 最大ルーム数
-const MAX_NUM_CLIENTS: NumOfClients = 2; // 最大クライアント数(1ルーム内)
-const MAX_NUM_PLAYER_INDEX: u8 = 255;    // 最大プレイヤー番号(1ルーム内)
-const ROUTINE_INTERVAL_MS:u64 = 100;     // 定期処理間隔(ミリ秒)
-const MATCH_TIME_SEC:usize = 300;        // 試合時間(秒)
+const ROUTINE_INTERVAL_MS:u64 = 40;      // 定期処理間隔(ミリ秒)
 
 #[tokio::main]
 async fn main() {
@@ -83,7 +78,7 @@ async fn main() {
     // Router定義
     let app = Router::new()
         // .routeでエンドポイントとハンドラー関数を紐づける
-        .route("/ws/", get(handler_ws))
+        .route("/ws/{num_of_players}", get(handler_ws))
         // .layerで通信処理過程に処理を追加できる
         // Extensionでハンドラー内からデータにアクセスできるようにする
         .layer(Extension(rooms.clone()))
@@ -128,6 +123,7 @@ async fn handler_ws(
     ws: WebSocketUpgrade,
     Extension(rooms): Extension<Rooms>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    Path(num_of_players): Path<usize>,
     user_agent: Option<TypedHeader<headers::UserAgent>>,
 ) -> impl IntoResponse {
 
@@ -140,14 +136,15 @@ async fn handler_ws(
     tracing::debug!("`{}` at {} connected.", user_agent, addr);
 
     // WebSocket接続が確立したらクライアント毎の通信処理に入る
-    ws.on_upgrade(move |socket| client_connection(socket, rooms))
+    ws.on_upgrade(move |socket| client_connection(socket, rooms, num_of_players))
 }
 
 // WebSocketクライアントとの接続管理
 // 各クライアント毎に1回ずつ呼ばれ、中で継続して通信を処理する
 async fn client_connection(
     socket: WebSocket,
-    rooms: Rooms
+    rooms: Rooms,
+    num_of_players: usize
 ) {
     // WebSocketを読み書きに分離
     let (mut sender, mut receiver) = socket.split();
@@ -157,7 +154,7 @@ async fn client_connection(
 
     let mut room_id = 0;               // この通信に割り当てるルーム番号
     let mut client_id = String::new(); // この通信に割り当てるクライアント識別子
-
+    let mut room_player_idx = 0;       // この通信に割り当てるプレイヤー番号
     // 空いてるルームを探して割り当てる
     // IDに0は使わないことにする
     {
@@ -166,25 +163,24 @@ async fn client_connection(
         for n in 1..=MAX_NUM_ROOMS {
             // 既存のルーム
             if let Some(room) = rooms_writable.get_mut(&n) {
+                // プレイ人数が異なるルームはとばす
+                if room.capacity != num_of_players {
+                    continue;
+                }
                 // 現在のクライアント数を取得
                 let room_members_len = room.clients.len();
                 // 満員なら次のルームへ
-                if room_members_len >= MAX_NUM_CLIENTS.into() {
+                if room_members_len >= num_of_players.into() {
                     continue;
                 }
                 // ルームIDをセット
                 room_id = n;
-                // ルーム内のプレイヤー番号を更新
-                room.player_idx = if room.player_idx < MAX_NUM_PLAYER_INDEX {
-                    room.player_idx + 1
-                } else {
-                    1
-                };
+                // プレイヤーの番号を保存
+                room_player_idx = room_members_len + 1;
                 // クライアントIDを作成
-                client_id = format!("{}-{}", room_id, room.player_idx);
+                client_id = format!("{}-{}", room_id, room_player_idx);
                 // ルームにクライアントを追加
                 room.clients.insert(client_id.clone(), tx);
-
                 break;
             } else {
                 // ルーム数が上限なら通信中断
@@ -194,17 +190,18 @@ async fn client_connection(
                 }
                 // ルームIDをセット
                 room_id = n;
+                // プレイヤーの番号を保存
+                room_player_idx = 1;
                 // ルーム生成
                 let mut new_room = Room::default();
-                // ルーム内のプレイヤー番号を初期化
-                new_room.player_idx = 1;
+                // ルームの収容人数を初期化
+                new_room.capacity = num_of_players;
                 // クライアントIDを作成
-                client_id = format!("{}-{}", room_id, new_room.player_idx);
+                client_id = format!("{}-{}", room_id, room_player_idx);
                 // ルームにクライアントを追加
                 new_room.clients.insert(client_id.clone(), tx);
                 // 新しいルームを追加
                 rooms_writable.insert(room_id, new_room);
-
                 break;
             }
         }
@@ -226,11 +223,20 @@ async fn client_connection(
     if let Some(room) = rooms.read().await.get(&room_id) {
         if let Some(tx) = room.clients.get(&client_id) {
             let _ = tx.send(Message::Text(json!({
-                "ctrl": 1,        // 識別子割り当て用の通信と明示
-                "cid": client_id, // 割り当てるクライアント識別子
+                "k1": 1,         // 識別子割り当て用の通信と明示
+                "k2": client_id, // 割り当てるクライアント識別子
             }).to_string().into()));
 
             tracing::debug!("{} joined room {}", client_id, room_id);
+        }
+
+        // 人数が集まったら試合開始を通知
+        if room_player_idx == num_of_players {
+            for (_member_id, tx) in &room.clients {
+                let _ = tx.send(Message::Text(json!({
+                    "k1": 3, // 試合開始用の通信と明示
+                }).to_string().into()));
+            }
         }
     }
 
@@ -323,7 +329,7 @@ fn start_duty_loop(rooms: Rooms) {
                     // クライアントに処理依頼を送信
                     if let Some(tx) = room.clients.get(client_id) {
                         let _ = tx.send(Message::Text(json!({
-                            "ctrl": 2, // 共通処理の当番と明示
+                            "k1": 2, // 共通処理の当番と明示
                         }).to_string().into()));
 
                         println!("//// {} is on duty! ////", client_id);
