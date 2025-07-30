@@ -159,7 +159,12 @@ public static class PlayersController
         }
 
         // イベントをセット
-        player.SetReceivedPlayerEvent(evt, ItemsController.GetItem(itemId));
+        Item item = ItemsController.GetItem(itemId);
+        player.SetReceivedPlayerEvent(evt, item);
+        if (item != null)
+        {
+            item.SetSyncState(SyncState.ReceiveOnly);
+        }
 
         // 通信切断検知タイマー更新
         player.ResetExitTimer();
