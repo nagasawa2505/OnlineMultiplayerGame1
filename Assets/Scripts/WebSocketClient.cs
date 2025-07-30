@@ -12,7 +12,7 @@ public static class WebSocketClient
     static CancellationTokenSource cancel;
 
     const int ReceiveBufSize = 1024;
-    const int IntervalMs = 20;
+    const int IntervalMs = 40;
     const int TimeoutSec = 10;
 
     static bool isOnDuty;
