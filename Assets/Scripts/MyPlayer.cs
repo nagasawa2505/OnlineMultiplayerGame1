@@ -5,7 +5,7 @@ public class MyPlayer : Player
 {
     bool isInteractive;
     bool isKick;
-    Vector3 lastPosition;
+    bool isMove;
 
     // Start is called before the first frame update
     protected override void Start()
@@ -13,8 +13,6 @@ public class MyPlayer : Player
         base.Start();
 
         SetIsMyself(true);
-
-        sqrMoveThreshold = 0.001f;
     }
 
     protected override void FixedUpdate()
@@ -47,11 +45,9 @@ public class MyPlayer : Player
         isKick = false;
 
         // アニメーション更新
-        animator.SetBool("isMoving", IsMoving(transform.position, lastPosition));
+        animator.SetBool("isMoving", isMove);
         animator.SetBool("isKicking", currentEvent == PlayerEvent.Kicking);
         animator.SetBool("isThrowing", currentEvent == PlayerEvent.Throwing);
-
-        lastPosition = transform.position;
     }
 
     // Update is called once per frame
@@ -66,6 +62,8 @@ public class MyPlayer : Player
     // プレイヤー操作
     void GetInput()
     {
+        isMove = false;
+
         float axisH = Input.GetAxis("Horizontal");
         transform.Rotate(0, axisH * turnFactor * Time.deltaTime, 0);
 
@@ -74,6 +72,8 @@ public class MyPlayer : Player
 
         if (moveZ != 0)
         {
+            isMove = true;
+
             switch (currentEvent)
             {
                 case PlayerEvent.Carrying:
