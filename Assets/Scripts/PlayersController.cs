@@ -36,9 +36,19 @@ public static class PlayersController
             return null;
         }
 
-        // プレイヤーの位置、向きをチーム毎に調整
-        Quaternion playerRotation = teamNum % 2 == 0 ? Quaternion.identity : Quaternion.Euler(0, 180, 0);
-        float playerPosZ = teamNum % 2 == 0 ? UnityEngine.Random.Range(0, 5) : UnityEngine.Random.Range(-5, 0);
+        // チームごとにプレイヤーの位置と向きを調整
+        Quaternion playerRotation;
+        float playerPosZ;
+        if (teamNum % 2 == 0)
+        {
+            playerRotation = Quaternion.Euler(0, 180, 0);
+            playerPosZ = 45;
+        }
+        else
+        {
+            playerRotation = Quaternion.identity;
+            playerPosZ = -45;
+        }
 
         // プレイヤー生成
         GameObject playerObj = Object.Instantiate(playerPrefab, new Vector3(
@@ -95,7 +105,11 @@ public static class PlayersController
         else
         {
             Item eventItem = myPlayer.GetEventItem();
-            if (eventItem != null)
+            if (eventItem == null)
+            {
+                dc.SetPlayerEventAndItem(evt, 0);
+            }
+            else
             {
                 int itemId = eventItem.GetItemId();
                 dc.SetPlayerEventAndItem(evt, itemId);

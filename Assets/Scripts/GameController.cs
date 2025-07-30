@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 
 public enum GameState
 {
+    Title,
     Wait,
     Start,
     End,
@@ -64,6 +65,7 @@ public class GameController : MonoBehaviour
         {
             case "Title":
                 {
+                    ItemsController.SpawnItem(0, new Vector3(0, spawnAxisY, 0), Quaternion.identity, GetTransform());
                     break;
                 }
             case "Scene1":
@@ -81,6 +83,40 @@ public class GameController : MonoBehaviour
                     break;
                 }
         }
+    }
+
+    // 参加人数を選択したとき
+    static void StartScene(int playerCount, string sceneName)
+    {
+        try
+        {
+            // WebSocket通信開始
+            WebSocketClient.StartConnection(playerCount);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+            Application.Quit();
+        }
+
+        // シーン移動
+        SetGameState(GameState.Wait);
+        SceneManager.LoadScene(sceneName);
+    }
+
+    public static void StartScene2P()
+    {
+        StartScene(2, "Scene1");
+    }
+
+    public static void StartScene4P()
+    {
+        StartScene(4, "Scene1");
+    }
+
+    public static void StartScene8P()
+    {
+        StartScene(8, "Scene1");
     }
 
     // 初回通信に成功したとき
@@ -101,42 +137,6 @@ public class GameController : MonoBehaviour
         }
     }
 
-    // 参加人数を選択したとき
-    static void StartScene(int playerCount, string sceneName)
-    {
-        try
-        {
-            // WebSocket通信開始
-            WebSocketClient.StartConnection(playerCount);
-        }
-        catch (Exception e)
-        {
-            Debug.LogException(e);
-            Application.Quit();
-        }
-
-        // 前ゲームの掃除
-        ClearSceneData();
-
-        // シーン移動
-        SceneManager.LoadScene(sceneName);
-    }
-
-    public static void StartScene2P()
-    {
-        StartScene(2, "Scene1");
-    }
-
-    public static void StartScene4P()
-    {
-        StartScene(4, "Scene1");
-    }
-
-    public static void StartScene8P()
-    {
-        StartScene(8, "Scene1");
-    }
-
     // 参加人数が集まったとき
     public static void StartGame()
     {
@@ -152,7 +152,7 @@ public class GameController : MonoBehaviour
     // 試合が終了したとき
     public static void EndGame()
     {
-        self.gameState = GameState.End;
+        SetGameState(GameState.End);
 
         // WebSocket接続終了
         WebSocketClient.EndConnection();
@@ -170,6 +170,15 @@ public class GameController : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+    }
+
+    public static void BackToTitle()
+    {
+        ClearSceneData();
+
+        SetGameState(GameState.Title);
+
+        SceneManager.LoadScene("Title");
     }
 
     public static int GetTeamNumber(string clientId)

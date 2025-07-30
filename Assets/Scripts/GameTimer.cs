@@ -2,7 +2,7 @@
 
 public class GameTimer : MonoBehaviour
 {
-    const float MatchTimeSec = 60f;
+    const float MatchTimeSec = Config.MatchTimeSec;
     float timer;
     bool isMatchEnd;
     GameState currentGameState;

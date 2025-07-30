@@ -5,12 +5,16 @@ public class MyPlayer : Player
 {
     bool isInteractive;
     bool isKick;
+    Vector3 lastPosition;
 
-    protected override void Awake()
+    // Start is called before the first frame update
+    protected override void Start()
     {
-        base.Awake();
+        base.Start();
 
         SetIsMyself(true);
+
+        sqrMoveThreshold = 0.001f;
     }
 
     protected override void FixedUpdate()
@@ -43,9 +47,11 @@ public class MyPlayer : Player
         isKick = false;
 
         // アニメーション更新
-        animator.SetBool("isMoving", rbody.velocity.sqrMagnitude > sqrMoveThreshold);
+        animator.SetBool("isMoving", IsMoving(transform.position, lastPosition));
         animator.SetBool("isKicking", currentEvent == PlayerEvent.Kicking);
         animator.SetBool("isThrowing", currentEvent == PlayerEvent.Throwing);
+
+        lastPosition = transform.position;
     }
 
     // Update is called once per frame
@@ -73,9 +79,11 @@ public class MyPlayer : Player
                 case PlayerEvent.Carrying:
                     moveZ *= 0.5f;
                     break;
+
                 case PlayerEvent.Kicking:
                     moveZ *= 0.5f;
                     break;
+
                 case PlayerEvent.Throwing:
                     moveZ *= 0.25f;
                     break;
@@ -98,26 +106,26 @@ public class MyPlayer : Player
         }
     }
 
-    // 物を持つ
-    public override CarryableItem HoldItem(CarryableItem carryingItem = null)
-    {
-        CarryableItem item = base.HoldItem(carryingItem);
-        if (item != null)
-        {
-            // イベント更新
-            SetSendPlayerEvent(PlayerEvent.Carrying, item);
-        }
-
-        return item;
-    }
-
     // 物を蹴る
-    protected override Item KickItem()
+    protected override Item KickItem(KickableItem kickedItem = null)
     {
         Item item = base.KickItem();
 
         // イベント更新
         SetSendPlayerEvent(PlayerEvent.Kicking, item);
+
+        return item;
+    }
+
+    // 物を持つ
+    public override CarryableItem HoldItem(CarryableItem carryiedItem = null)
+    {
+        CarryableItem item = base.HoldItem(carryiedItem);
+        if (item != null)
+        {
+            // イベント更新
+            SetSendPlayerEvent(PlayerEvent.Carrying, item);
+        }
 
         return item;
     }
@@ -149,7 +157,7 @@ public class MyPlayer : Player
                 break;
 
             case PlayerEvent.Carrying:
-                timerResetEvent = 0.5f;
+                timerResetEvent = 0.25f;
                 eventItem = item;
                 break;
 

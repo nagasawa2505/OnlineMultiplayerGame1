@@ -11,6 +11,7 @@ public class Item : SynchronizedObject
 
     protected bool isUpdated;
     protected bool isMoving;
+
     [SerializeField]
     protected bool isGrounded;
 
@@ -85,7 +86,7 @@ public class Item : SynchronizedObject
 
     protected override void OnTriggerExit(Collider other)
     {
-        return;
+        base.OnTriggerExit(other);
     }
 
     public override void SetSyncState(SyncState state = SyncState.Bidirectional)
@@ -97,12 +98,15 @@ public class Item : SynchronizedObject
             case SyncState.Bidirectional:
                 rbody.isKinematic = false;
                 break;
+
             case SyncState.SendOnly:
                 rbody.isKinematic = false;
                 break;
+
             case SyncState.ReceiveOnly:
                 rbody.isKinematic = true;
                 break;
+
             default:
                 rbody.isKinematic = false;
                 break;

@@ -9,6 +9,12 @@ public class UIController : MonoBehaviour
 
     public GameObject titlePanel;
 
+    public GameObject waitingPanel;
+
+    public GameObject startPanel;
+
+    public GameObject guidePanel;
+
     public GameObject timerPanel;
     public TextMeshProUGUI timerText;
 
@@ -43,32 +49,54 @@ public class UIController : MonoBehaviour
         string sceneName = SceneManager.GetActiveScene().name;
         GameState gameState = GameController.GetGameState();
 
-        // 初期化しないで起動直後も呼ばせる
         if (sceneName != activeSceneName || gameState != currentGameState)
         {
             switch (sceneName)
             {
                 case "Title":
                     titlePanel.SetActive(true);
+                    waitingPanel.SetActive(false);
+                    startPanel.SetActive(false);
+                    guidePanel.SetActive(false);
                     timerPanel.SetActive(false);
                     resultPanel.SetActive(false);
                     break;
                 default:
-                    if (GameController.GetGameState() == GameState.Start)
+                    if (GameController.GetGameState() == GameState.Wait)
                     {
                         titlePanel.SetActive(false);
+                        waitingPanel.SetActive(true);
+                        startPanel.SetActive(false);
+                        guidePanel.SetActive(false);
+                        timerPanel.SetActive(false);
+                        resultPanel.SetActive(false);
+                    }
+                    else if (GameController.GetGameState() == GameState.Start)
+                    {
+                        titlePanel.SetActive(false);
+                        waitingPanel.SetActive(false);
+                        startPanel.SetActive(true);
+                        guidePanel.SetActive(true);
                         timerPanel.SetActive(true);
                         resultPanel.SetActive(false);
+
+                        Invoke("HideStartPanel", 2f);
                     }
                     else if (GameController.GetGameState() == GameState.End)
                     {
                         titlePanel.SetActive(false);
+                        waitingPanel.SetActive(false);
+                        startPanel.SetActive(false);
+                        guidePanel.SetActive(false);
                         timerPanel.SetActive(false);
                         resultPanel.SetActive(true);
                     }
                     else
                     {
                         titlePanel.SetActive(false);
+                        waitingPanel.SetActive(false);
+                        startPanel.SetActive(false);
+                        guidePanel.SetActive(false);
                         timerPanel.SetActive(false);
                         resultPanel.SetActive(false);
                     }
@@ -99,20 +127,27 @@ public class UIController : MonoBehaviour
                 resultText.color = textColorDraw;
                 resultText.text = "DRAW";
                 break;
-            }
-            resultPanel.SetActive(true);
+
+            default:
+                break;
+        }
+        resultPanel.SetActive(true);
+    }
+
+    public void BackToTitle()
+    {
+        GameController.BackToTitle();
     }
 
     void ClearResult()
     {
         resultPanel.SetActive(false);
-        resultText.color = new Color(0, 0, 0);
+        resultText.color = new Color();
         resultText.text = string.Empty;
     }
 
-    public void BackToTitle()
+    void HideStartPanel()
     {
-        GameController.SetGameState(GameState.Wait);
-        SceneManager.LoadScene("Title");
+        startPanel.SetActive(false);
     }
 }

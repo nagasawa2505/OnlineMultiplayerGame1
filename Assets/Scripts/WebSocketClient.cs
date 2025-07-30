@@ -11,8 +11,6 @@ public static class WebSocketClient
     static ClientWebSocket ws;
     static CancellationTokenSource cancel;
 
-    const string Host = Config.Host;
-    const string Port = Config.Port;
     const int ReceiveBufSize = 1024;
     const int IntervalMs = 20;
     const int TimeoutSec = 10;
@@ -32,7 +30,7 @@ public static class WebSocketClient
         cancel = new CancellationTokenSource();
 
         // サーバーに接続
-        await ws.ConnectAsync(new Uri($"ws://{Host}:{Port}/ws/{playerCount}"), cancel.Token);
+        await ws.ConnectAsync(new Uri(Config.WebsocketEndpoint + $"/{playerCount}"), cancel.Token);
 
         // 送信ループ
         _ = SendLoop().ContinueWith(t =>
@@ -73,6 +71,8 @@ public static class WebSocketClient
         finally
         {
             ws.Dispose();
+            ws = null;
+            cancel = null;
         }
     }
 

@@ -101,18 +101,41 @@ public abstract class Player : SynchronizedObject
         otherCollider = null;
     }
 
-    // 物を蹴る
-    protected virtual Item KickItem()
+    // 動いてるかを返す
+    protected virtual bool IsMoving(Vector3 pos1, Vector3 pos2)
     {
-        if (otherCollider == null)
-        {
-            return null;
-        }
+        float dx = pos1.x - pos2.x;
+        float dz = pos1.z - pos2.z;
+        return dx * dx + dz * dz > sqrMoveThreshold;
+    }
 
-        KickableItem item = otherCollider.GetComponent<KickableItem>();
-        if (item == null)
+    // 物を蹴る
+    protected virtual Item KickItem(KickableItem kickedItem = null)
+    {
+        KickableItem item;
+
+        if (IsMyself())
         {
-            return null;
+            // 接してる物が無ければ終了
+            if (otherCollider == null)
+            {
+                return null;
+            }
+
+            // 蹴れる物じゃなければ終了
+            item = otherCollider.GetComponent<KickableItem>();
+            if (item == null)
+            {
+                return null;
+            }
+        }
+        else
+        {
+            if (kickedItem == null)
+            {
+                return null;
+            }
+            item = kickedItem;
         }
 
         item.Kicked(this, kickFactor);
@@ -121,11 +144,11 @@ public abstract class Player : SynchronizedObject
     }
 
     // 物を持つ
-    public virtual CarryableItem HoldItem(CarryableItem carryingItem = null)
+    public virtual CarryableItem HoldItem(CarryableItem carryiedItem = null)
     {
         CarryableItem item;
 
-        if (carryingItem == null)
+        if (IsMyself())
         {
             // 接してる物が無ければ終了
             if (otherCollider == null)
@@ -142,7 +165,11 @@ public abstract class Player : SynchronizedObject
         }
         else
         {
-            item = carryingItem;
+            if (carryiedItem == null)
+            {
+                return null;
+            }
+            item = carryiedItem;
         }
 
         // プレイヤーの配下にする
@@ -151,7 +178,7 @@ public abstract class Player : SynchronizedObject
             return null;
         }
 
-        // イベントの初期化を待たせる
+        // 持ってる間イベントの初期化を待たせる
         isStopTimerResetEvent = true;
 
         return item;
