@@ -11,21 +11,23 @@ public enum DataType : byte
     Start,
 }
 
-// JsonUtility
+//
+// JsonUtilityで使用する
 // メンバがprivateだと値が初期値になる
-// メンバの変数名がJSONのキーになる
+// メンバの変数名がJSONのキー名になる
+//
 [Serializable]
 public class DataContainer
 {
     public DataType    k1; // データの用途
     public string      k2; // クライアントID
-    public ulong       k3; // プレイヤーの位置(16B * 3 + 空16B)
-    public ulong       k4; // プレイヤーの回転(16B * 4)
-    public ushort      k5; // プレイヤーの状態、対象アイテムID(8B * 2)
+    public ulong       k3; // プレイヤーの位置(16b * 3 + 空16b)
+    public ulong       k4; // プレイヤーの回転(16b * 4)
+    public ushort      k5; // プレイヤーの状態、対象アイテムID(8b * 2)
     public List<int>   k6; // アイテムID(複数)
     public List<int>   k7; // アイテムPrefabID(複数)
-    public List<ulong> k8; // アイテムの位置(16B * 3 + 空16B)
-    public List<ulong> k9; // アイテムの回転(16B * 4)
+    public List<ulong> k8; // アイテムの位置(16b * 3 + 空16b)
+    public List<ulong> k9; // アイテムの回転(16b * 4)
 
     public DataContainer()
     {
