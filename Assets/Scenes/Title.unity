@@ -271,6 +271,10 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 1582994266}
+    - target: {fileID: 1174641784488063744, guid: a626243f68afb1f4a8817f8fb4735a51, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: StartScene6P
+      objectReference: {fileID: 0}
     - target: {fileID: 2539570382566280689, guid: a626243f68afb1f4a8817f8fb4735a51, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 

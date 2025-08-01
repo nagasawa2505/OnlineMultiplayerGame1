@@ -51,10 +51,19 @@ public class GameController : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void OnDestroy()
+    {
+        if (this == self)
+        {
+            // WebSocket接続終了
+            WebSocketClient.CloseConnection();
+        }
+    }
+
     private void OnApplicationQuit()
     {
         // WebSocket接続終了
-        WebSocketClient.EndConnection();
+        WebSocketClient.CloseConnection();
     }
 
     // シーン毎にアイテムを生成
@@ -91,7 +100,7 @@ public class GameController : MonoBehaviour
         try
         {
             // WebSocket通信開始
-            WebSocketClient.StartConnection(playerCount);
+            WebSocketClient.OpenConnection(playerCount);
         }
         catch (Exception e)
         {
@@ -114,9 +123,9 @@ public class GameController : MonoBehaviour
         StartScene(4, "Scene1");
     }
 
-    public static void StartScene8P()
+    public static void StartScene6P()
     {
-        StartScene(8, "Scene1");
+        StartScene(6, "Scene1");
     }
 
     // 初回通信に成功したとき
@@ -133,7 +142,7 @@ public class GameController : MonoBehaviour
         Player newPlayer = PlayersController.SpawnPlayer(self.clientId);
         if (newPlayer == null)
         {
-            throw new Exception(MyDebug.Log("プレイヤー生成失敗"));
+            throw new Exception("プレイヤー生成失敗");
         }
     }
 
@@ -155,7 +164,7 @@ public class GameController : MonoBehaviour
         SetGameState(GameState.End);
 
         // WebSocket接続終了
-        WebSocketClient.EndConnection();
+        WebSocketClient.CloseConnection();
     }
 
     static void ClearSceneData()
