@@ -48,12 +48,12 @@ struct Room {
     capacity: usize,
     idx_on_duty: usize,
 }
-// ルームを番号 -> ルーム構造体型
+// ルーム番号 -> ルーム構造体型
 type Rooms = Arc<RwLock<HashMap<u8, Room>>>;
 
 type NumOfRooms = u8;   // ルーム数上限用
 const MAX_NUM_ROOMS: NumOfRooms = 255;   // 最大ルーム数
-const ROUTINE_INTERVAL_MS:u64 = 40;      // 定期処理間隔(ミリ秒)
+const ROUTINE_INTERVAL_MS:u64 = 1000;    // 定期処理間隔(ミリ秒)
 
 #[tokio::main]
 async fn main() {
@@ -256,7 +256,7 @@ async fn client_connection(
     while let Some(Ok(msg)) = receiver.next().await {
         match msg {
             Message::Text(text) => {
-                println!("received from {} [{}]", client_id, text.to_string());
+                //println!("received from {} [{}]", client_id, text.to_string());
 
                 let rooms_read = rooms.read().await;
                 
@@ -268,18 +268,18 @@ async fn client_connection(
                             // サーバーが受信した内容をそのまま送信
                             let _ = tx.send(Message::Text(text.clone()));
 
-                            println!("**** {} -> {} ****", client_id, member_id);
+                            //println!("**** {} -> {} ****", client_id, member_id);
                         }
                     }
                 }
             }
             // Closeが送られてこない場合もある
             Message::Close(Some(frame)) => {
-                println!("disconnect from {} (code: {}, reason: {})", client_id, frame.code, frame.reason);
+                //println!("disconnect from {} (code: {}, reason: {})", client_id, frame.code, frame.reason);
                 break;
             }
             Message::Close(None) => {
-                println!("disconnect from {} client (no reason)", client_id);
+                //println!("disconnect from {} client (no reason)", client_id);
                 break;
             }
             _ => {}
@@ -332,7 +332,7 @@ fn start_duty_loop(rooms: Rooms) {
                             "k1": 2, // 共通処理の当番と明示
                         }).to_string().into()));
 
-                        println!("//// {} is on duty! ////", client_id);
+                        //println!("//// {} is on duty! ////", client_id);
                     }
 
                     // クライアントの当番インデックスを更新

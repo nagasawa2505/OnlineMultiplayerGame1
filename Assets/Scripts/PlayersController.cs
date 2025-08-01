@@ -15,7 +15,7 @@ public static class PlayersController
         // 引数チェック
         if (string.IsNullOrEmpty(clientId))
         {
-            MyDebug.Log("クライアントID取得失敗");
+            Debug.Log("クライアントID取得失敗");
             return null;
         }
 
@@ -23,7 +23,7 @@ public static class PlayersController
         string thisClientId = GameController.GetClientId();
         if (string.IsNullOrEmpty(thisClientId))
         {
-            MyDebug.Log("クライアントID未割り当て");
+            Debug.Log("クライアントID未割り当て");
             return null;
         }
 
@@ -32,7 +32,7 @@ public static class PlayersController
         GameObject playerPrefab = PrefabStrage.GetPlayer(teamNum);
         if (playerPrefab == null)
         {
-            MyDebug.Log("Prefab取得失敗");
+            Debug.Log("Prefab取得失敗");
             return null;
         }
 
@@ -55,7 +55,7 @@ public static class PlayersController
             UnityEngine.Random.Range(-5, 5), GameController.spawnAxisY, playerPosZ), playerRotation);
         if (playerObj == null)
         {
-            MyDebug.Log("プレイヤー生成失敗");
+            Debug.Log("プレイヤー生成失敗");
             return null;
         }
 

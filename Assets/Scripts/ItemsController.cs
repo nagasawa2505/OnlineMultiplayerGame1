@@ -14,7 +14,7 @@ public static class ItemsController
         GameObject prefab = PrefabStrage.GetItemByIndex(prefabIndex);
         if (prefab == null)
         {
-            MyDebug.Log("Prefab取得失敗");
+            Debug.Log("Prefab取得失敗");
             return;
         }
 
@@ -22,7 +22,7 @@ public static class ItemsController
         GameObject obj = Object.Instantiate(prefab, position, rotation, transform);
         if (obj == null)
         {
-            MyDebug.Log("アイテム生成失敗");
+            Debug.Log("アイテム生成失敗");
             return;
         }
 
@@ -30,7 +30,7 @@ public static class ItemsController
         Item item = obj.GetComponent<Item>();
         if (item == null)
         {
-            MyDebug.Log("コンポーネント取得失敗");
+            Debug.Log("コンポーネント取得失敗");
             return;
         }
 

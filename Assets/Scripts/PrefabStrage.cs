@@ -25,12 +25,12 @@ public class PrefabStrage : MonoBehaviour
     {
         if (players.Length == 0)
         {
-            MyDebug.Log("プレイヤー未登録");
+            Debug.Log("プレイヤー未登録");
         }
 
         if (items.Length == 0)
         {
-            MyDebug.Log("アイテム未登録");
+            Debug.Log("アイテム未登録");
         }
     }
 
