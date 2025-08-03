@@ -3,16 +3,10 @@
 public class CameraController : MonoBehaviour
 {
     Transform myPlayer;
-    public float offsetFront = 5f;
-    public float offsetTop = 2.5f;
-    public float followSpeed = 12f;
-    public float rotateSpeed = 10f;
-
-    // Start is called before the first frame update
-    protected void Start()
-    {
-        transform.position = new Vector3(0, 25, -50);
-    }
+    const float offsetFront = 5f;
+    const float offsetTop = 2.5f;
+    const float followSpeed = 7.5f;
+    const float rotateSpeed = 7.5f;
 
     void LateUpdate()
     {
@@ -23,6 +17,8 @@ public class CameraController : MonoBehaviour
             if (player != null)
             {
                 myPlayer = player.transform;
+                int teamNum = GameController.GetTeamNumber();
+                transform.rotation = teamNum % 2 == 0 ? Quaternion.Euler(270, 180, 0) : Quaternion.Euler(270, 0, 0);
             }
         }
         else

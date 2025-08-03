@@ -33,7 +33,12 @@ public class Post : MonoBehaviour
     }
 
     void OnTriggerEnter(Collider other)
-    {   
+    {
+        if (GameController.GetGameState() != GameState.Start)
+        {
+            return;
+        }
+
         Item item = other.GetComponent<Item>();
         if (item == null)
         {
@@ -59,6 +64,11 @@ public class Post : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
+        if (GameController.GetGameState() != GameState.Start)
+        {
+            return;
+        }
+
         Item item = other.GetComponent<Item>();
         if (item == null)
         {

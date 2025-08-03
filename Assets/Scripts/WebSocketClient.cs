@@ -16,8 +16,6 @@ using UnityEngine;
 // WebSocket通信制御クラス
 public static partial class WebSocketClient
 {
-    static bool isOnDuty;
-
     // 送信内容をセット
     static void SetSendData(DataContainer dc)
     {
@@ -28,16 +26,7 @@ public static partial class WebSocketClient
         PlayersController.SetSendData(dc);
 
         // アイテム情報セット
-        ItemsController.SetSendData(dc, false);
-
-        // 持ち回り当番
-        if (isOnDuty)
-        {
-            // 迷子アイテム情報セット
-            ItemsController.SetSendData(dc, true);
-
-            isOnDuty = false;
-        }
+        ItemsController.SetSendData(dc);
     }
 
     // 受信内容をセット
@@ -132,11 +121,6 @@ public static partial class WebSocketClient
             // 初回の通信
             case DataType.Init:
                 GameController.SpawnMyPlayer(dc.GetClientId());
-                break;
-
-            // 持ち回り当番の通信
-            case DataType.Duty:
-                isOnDuty = true;
                 break;
 
             // 試合開始
@@ -311,11 +295,6 @@ public static partial class WebSocketClient
                 // 初回の通信
                 case DataType.Init:
                     GameController.SpawnMyPlayer(dc.GetClientId());
-                    break;
-
-                // 持ち回り当番の通信
-                case DataType.Duty:
-                    isOnDuty = true;
                     break;
 
                 // 試合開始

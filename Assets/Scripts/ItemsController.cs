@@ -8,7 +8,7 @@ public static class ItemsController
     static Dictionary<int, Item> items = new();
 
     // アイテム生成
-    public static void SpawnItem(int prefabIndex, Vector3 position, Quaternion rotation, Transform transform)
+    public static void SpawnItem(int prefabIndex, Vector3 position, Quaternion rotation, Transform transform, int itemId = 0)
     {
         // 生成対象のPrefabを取得
         GameObject prefab = PrefabStrage.GetItemByIndex(prefabIndex);
@@ -37,11 +37,19 @@ public static class ItemsController
         // Prefabの番号をセット
         item.SetPrefabId(prefabIndex);
 
-        // IDを更新してセット
-        item.SetItemId(++lastItemId);
-
-        // 管理対象に追加
-        items.Add(lastItemId, item);
+        if (itemId == 0)
+        {
+            // IDを更新してセット
+            lastItemId++;
+            item.SetItemId(lastItemId);
+            items.Add(lastItemId, item);
+        }
+        else
+        {
+            // 受信したIDをセット
+            item.SetItemId(itemId);
+            items.Add(itemId, item);
+        }   
     }
 
     // 全アイテム破棄
@@ -59,7 +67,7 @@ public static class ItemsController
     }
 
     // 送信内容をセット
-    public static void SetSendData(DataContainer dc, bool isOnDuty)
+    public static void SetSendData(DataContainer dc)
     {
         foreach (var (itemId, item) in items)
         {
@@ -68,33 +76,23 @@ public static class ItemsController
                 continue;
             }
 
-            // 同期状態を取得
-            SyncState state = item.GetSyncState();
-
-            // 当番なら担当なし以外はとばす
-            if (isOnDuty)
-            {
-                if (state != SyncState.Bidirectional)
-                {
-                    continue;
-                }
-            }
             // 自分の担当分以外はとばす
-            else
+            SyncState state = item.GetSyncState();
+            if (state != SyncState.SendOnly)
             {
-                if (state != SyncState.SendOnly)
-                {
-                    continue;
-                }
+                continue;
             }
 
             // 送信内容セット
             Vector3 position = item.transform.position;
             Quaternion rotation = item.transform.localRotation;
-            dc.AddItemId(itemId);
-            dc.AddItemPrefabId(item.GetPrefabId());
-            dc.AddItemPosition(item.transform.position);
-            dc.AddItemRotation(rotation);
+            if (item.IsSentPositionChanged(ref position) || item.IsSentRotationChanged(ref rotation))
+            {
+                dc.AddItemId(itemId);
+                dc.AddItemPrefabId(item.GetPrefabId());
+                dc.AddItemPosition(item.transform.position);
+                dc.AddItemRotation(rotation);
+            }
         }
     }
 
@@ -115,12 +113,11 @@ public static class ItemsController
 
             if (items.TryGetValue(itemId, out Item item))
             {
-                // 受信対象外ならとばす
+                // ローカルより受信内容を優先する
                 SyncState state = item.GetSyncState();
-                if (state == SyncState.SendOnly || state == SyncState.None)
+                if (state != SyncState.ReceiveOnly)
                 {
-                    item.SetIsUpdated(false);
-                    continue;
+                    item.SetSyncState(SyncState.ReceiveOnly);
                 }
 
                 // 位置と回転をセット
@@ -136,7 +133,7 @@ public static class ItemsController
             else
             {
                 // 管理対象外なら新たに生成
-                SpawnItem(prefabId, position, rotation, GameController.GetTransform());
+                SpawnItem(prefabId, position, rotation, GameController.GetTransform(), itemId);
             }
         }
     }
@@ -150,5 +147,14 @@ public static class ItemsController
         }
 
         return null;
+    }
+
+    // 全アイテムの同期状態を変更する
+    public static void SetSyncStateAll(SyncState syncState)
+    {
+        foreach (Item item in items.Values)
+        {
+            item.SetSyncState(syncState);
+        }
     }
 }

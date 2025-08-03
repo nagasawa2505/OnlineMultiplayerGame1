@@ -3,10 +3,8 @@
 // 同期状態
 public enum SyncState
 {
-    Bidirectional, // 送受信する
-    SendOnly,      // 送信のみ
     ReceiveOnly,   // 受信のみ
-    None,          // 送受信しない
+    SendOnly,      // 送信のみ
 }
 
 // 通信で同期されるものクラス
@@ -101,7 +99,7 @@ public abstract class SynchronizedObject : MonoBehaviour
         receivedRotation = rotation;
     }
 
-    public virtual void SetSyncState(SyncState state = SyncState.Bidirectional)
+    public virtual void SetSyncState(SyncState state)
     {
         syncState = state;
     }

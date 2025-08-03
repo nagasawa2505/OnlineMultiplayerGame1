@@ -21,14 +21,10 @@ public class Item : SynchronizedObject
 
     protected Rigidbody rbody;
 
-    // Start is called before the first frame update
-    protected override void Start()
+    protected override void Awake()
     {
-        base.Start();
-
-        moveSqrThreshold = positionThreshold * positionThreshold;
-
         rbody = GetComponent<Rigidbody>();
+        moveSqrThreshold = positionThreshold * positionThreshold;
     }
 
     protected override void FixedUpdate()
@@ -89,22 +85,18 @@ public class Item : SynchronizedObject
         base.OnTriggerExit(other);
     }
 
-    public override void SetSyncState(SyncState state = SyncState.Bidirectional)
+    public override void SetSyncState(SyncState state)
     {
         base.SetSyncState(state);
 
         switch (state)
         {
-            case SyncState.Bidirectional:
-                rbody.isKinematic = false;
+            case SyncState.ReceiveOnly:
+                rbody.isKinematic = true;
                 break;
 
             case SyncState.SendOnly:
                 rbody.isKinematic = false;
-                break;
-
-            case SyncState.ReceiveOnly:
-                rbody.isKinematic = true;
                 break;
 
             default:

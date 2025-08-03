@@ -74,7 +74,7 @@ public class OtherPlayer : Player
                 break;
 
             case PlayerEvent.Throwing:
-                timerResetEvent = 0.75f;
+                timerResetEvent = 1f;
                 eventItem = targetItem;
                 if (currentEvent == PlayerEvent.Carrying)
                 {

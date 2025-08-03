@@ -192,6 +192,12 @@ public static class PlayersController
         return myPlayer;
     }
 
+    // プレイヤー数を返す
+    public static int GetPlayerCount()
+    {
+        return players.Count;
+    }
+
     public static void Clear()
     {
         foreach (var (clientId, player) in players)

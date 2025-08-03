@@ -10,6 +10,7 @@ public class CarryableItem : KickableItem
     protected Transform originalParent;
 
     // 持ってるプレイヤー
+    [SerializeField]
     protected Player carryingPlayer;
 
     // Start is called before the first frame update
@@ -111,20 +112,12 @@ public class CarryableItem : KickableItem
             SetSyncState(SyncState.SendOnly);
 
             rbody.AddForce(player.transform.forward * 5f + Vector3.up * 7.5f, ForceMode.VelocityChange);
-
-            Invoke("Dettach", 0.5f);
         }
         else
         {
             SetSyncState(SyncState.ReceiveOnly);
-
-            // 元の親の配下に戻る
-            transform.SetParent(originalParent);
-
-            // コライダーを戻す
-            GetComponent<SphereCollider>().enabled = true;
-
-            carryingPlayer = null;
         }
+
+        Invoke("Dettach", 1f);
     }
 }

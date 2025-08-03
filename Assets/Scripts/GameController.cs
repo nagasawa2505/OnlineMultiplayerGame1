@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Runtime.InteropServices;
 
 public enum GameState
 {
@@ -19,7 +20,7 @@ public enum GameResult
 }
 
 // アプリケーション管理クラス
-public class GameController : MonoBehaviour
+public partial class GameController : MonoBehaviour
 {
     static GameController self;
 
@@ -37,6 +38,8 @@ public class GameController : MonoBehaviour
 
     [SerializeField]
     int teamNumber;
+
+    int roomCapacity;
 
     public static float spawnAxisY = 5f;
 
@@ -70,6 +73,9 @@ public class GameController : MonoBehaviour
     static void MakeScene()
     {
         string activeSceneName = SceneManager.GetActiveScene().name;
+        int maxAxisX = 50;
+        int maxAxisZ = 30;
+
         switch (activeSceneName)
         {
             case "Title":
@@ -79,11 +85,16 @@ public class GameController : MonoBehaviour
                 }
             case "Scene1":
                 {
-                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-15, 15),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
-                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-15, 15),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
-                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-20, 20),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
-                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-20, 20),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
-                    ItemsController.SpawnItem(2, new Vector3(UnityEngine.Random.Range(-10, 10),  spawnAxisY, UnityEngine.Random.Range(-10, 10)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(0, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
+                    ItemsController.SpawnItem(2, new Vector3(0, spawnAxisY, 0), Quaternion.identity, GetTransform());
 
                     break;
                 }
@@ -115,16 +126,19 @@ public class GameController : MonoBehaviour
 
     public static void StartScene2P()
     {
+        self.roomCapacity = 2;
         StartScene(2, "Scene1");
     }
 
     public static void StartScene4P()
     {
+        self.roomCapacity = 4;
         StartScene(4, "Scene1");
     }
 
     public static void StartScene6P()
     {
+        self.roomCapacity = 6;
         StartScene(6, "Scene1");
     }
 
@@ -154,7 +168,11 @@ public class GameController : MonoBehaviour
         // 1人目に準備してもらう
         if (self.playerNumber == 1)
         {
+            // アイテム生成
             MakeScene();
+
+            // すべてのアイテム情報を送信する
+            ItemsController.SetSyncStateAll(SyncState.SendOnly);
         }
     }
 
@@ -211,9 +229,19 @@ public class GameController : MonoBehaviour
         return self.clientId;
     }
 
+    public static int GetRoomNumber()
+    {
+        return self.roomNumber;
+    }
+
     public static int GetTeamNumber()
     {
         return self.teamNumber;
+    }
+
+    public static int GetRoomCapacity()
+    {
+        return self.roomCapacity;
     }
 
     public static void SetGameState(GameState state)
@@ -224,5 +252,22 @@ public class GameController : MonoBehaviour
     void SetGameStateStart()
     {
         self.gameState = GameState.Start;
+    }
+}
+
+public partial class GameController : MonoBehaviour
+{
+#if UNITY_WEBGL
+    [DllImport("__Internal")]
+    static extern int IsMobile();
+#endif
+
+    public static bool IsMobileDevice()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        return IsMobile() == 1;
+#else
+        return Application.isMobilePlatform;
+#endif
     }
 }

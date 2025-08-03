@@ -47,13 +47,16 @@ struct Room {
     clients: Clients,
     capacity: usize,
     idx_on_duty: usize,
+    is_playing: bool,
 }
 // ルーム番号 -> ルーム構造体型
 type Rooms = Arc<RwLock<HashMap<u8, Room>>>;
 
-type NumOfRooms = u8;   // ルーム数上限用
-const MAX_NUM_ROOMS: NumOfRooms = 255;   // 最大ルーム数
-const ROUTINE_INTERVAL_MS:u64 = 1000;    // 定期処理間隔(ミリ秒)
+const MAX_NUM_ROOMS: u8           = 255;  // 最大ルーム数
+const ROUTINE_INTERVAL_MS:u64     = 1000; // 定期処理間隔(ミリ秒)
+const VALUE_INITIAL_CONNECTION:u8 = 1;    // 初回通信
+const VALUE_ON_DUTY:u8            = 2;    // 共通処理割り当て
+const VALUE_START_MATCH:u8        = 3;    // 試合開始
 
 #[tokio::main]
 async fn main() {
@@ -107,7 +110,7 @@ async fn main() {
     tracing::debug!("Listening on {}", listener.local_addr().unwrap());
 
     // 定期処理開始
-    start_duty_loop(rooms.clone());
+    // start_duty_loop(rooms.clone());
 
     // TcpListenerとRouterのインスタンスを渡してHTTPサーバーを起動
     axum::serve(
@@ -167,6 +170,10 @@ async fn client_connection(
                 if room.capacity != num_of_players {
                     continue;
                 }
+                // すでにプレイ中のルームはとばす
+                if room.is_playing {
+                    continue;
+                }
                 // 現在のクライアント数を取得
                 let room_members_len = room.clients.len();
                 // 満員なら次のルームへ
@@ -220,11 +227,11 @@ async fn client_connection(
     });
 
     // クライアントに割り当てた情報を送信
-    if let Some(room) = rooms.read().await.get(&room_id) {
-        if let Some(tx) = room.clients.get(&client_id) {
+    if let Some(room_guard) = rooms.write().await.get_mut(&room_id) {
+        if let Some(tx) = room_guard.clients.get(&client_id) {
             let _ = tx.send(Message::Text(json!({
-                "k1": 1,         // 識別子割り当て用の通信と明示
-                "k2": client_id, // 割り当てるクライアント識別子
+                "k1": VALUE_INITIAL_CONNECTION, // 識別子割り当て用の通信と明示
+                "k2": client_id,                // 割り当てるクライアント識別子
             }).to_string().into()));
 
             tracing::debug!("{} joined room {}", client_id, room_id);
@@ -232,11 +239,12 @@ async fn client_connection(
 
         // 人数が集まったら試合開始を通知
         if room_player_idx == num_of_players {
-            for (_member_id, tx) in &room.clients {
+            for (_member_id, tx) in &room_guard.clients {
                 let _ = tx.send(Message::Text(json!({
-                    "k1": 3, // 試合開始用の通信と明示
+                    "k1": VALUE_START_MATCH, // 試合開始用の通信と明示
                 }).to_string().into()));
             }
+            room_guard.is_playing = true;
         }
     }
 
@@ -268,7 +276,7 @@ async fn client_connection(
                             // サーバーが受信した内容をそのまま送信
                             let _ = tx.send(Message::Text(text.clone()));
 
-                            //println!("**** {} -> {} ****", client_id, member_id);
+                            println!("**** {} -> {} ****", client_id, member_id);
                         }
                     }
                 }
@@ -297,7 +305,6 @@ async fn client_connection(
             room.clients.retain(|id, _tx| id != &client_id);
 
             // ルームにクライアントがいなくなったらルームを削除
-            // 要再検討
             if room.clients.is_empty() {
                 is_room_empty = true;
             }
@@ -329,7 +336,7 @@ fn start_duty_loop(rooms: Rooms) {
                     // クライアントに処理依頼を送信
                     if let Some(tx) = room.clients.get(client_id) {
                         let _ = tx.send(Message::Text(json!({
-                            "k1": 2, // 共通処理の当番と明示
+                            "k1": VALUE_ON_DUTY, // 共通処理の当番と明示
                         }).to_string().into()));
 
                         //println!("//// {} is on duty! ////", client_id);

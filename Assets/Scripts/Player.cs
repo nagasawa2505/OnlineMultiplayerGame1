@@ -23,9 +23,10 @@ public abstract class Player : SynchronizedObject
     protected float timerResetEvent;
     protected bool isStopTimerResetEvent;
 
-    protected float moveFactor = 10f;
-    protected float turnFactor = 128f;
-    protected float kickFactor = 200f;
+    protected float moveFactor = 6f;
+    protected float jumpFactor = 7.5f;
+    protected float turnFactor = 80f;
+    protected float kickFactor = 180f;
 
     protected Collider otherCollider;
     protected Rigidbody rbody;
@@ -81,7 +82,7 @@ public abstract class Player : SynchronizedObject
         // 接してる物をセット
         otherCollider = other;
 
-        Player player = other.GetComponent<Player>();
+        Player player = other.GetComponent<OtherPlayer>();
         if (player == null)
         {
             return;

@@ -6,10 +6,14 @@ public class UIController : MonoBehaviour
 {
     string activeSceneName;
     GameState currentGameState;
+    bool isMobileDevice;
+
+    public GameObject mobilePadPanel;
 
     public GameObject titlePanel;
 
     public GameObject waitingPanel;
+    public TextMeshProUGUI waitingText;
 
     public GameObject startPanel;
 
@@ -22,6 +26,7 @@ public class UIController : MonoBehaviour
     public TextMeshProUGUI resultText;
 
     GameTimer gameTimer;
+    int roomCapacity;
     float time;
 
     Color32 textColorWin = new Color32(0, 100, 255, 200);
@@ -32,6 +37,7 @@ public class UIController : MonoBehaviour
     void Start()
     {
         gameTimer = GetComponent<GameTimer>();
+        isMobileDevice = GameController.IsMobileDevice();
     }
 
     void FixedUpdate()
@@ -54,6 +60,7 @@ public class UIController : MonoBehaviour
             switch (sceneName)
             {
                 case "Title":
+                    mobilePadPanel.SetActive(false);
                     titlePanel.SetActive(true);
                     waitingPanel.SetActive(false);
                     startPanel.SetActive(false);
@@ -64,6 +71,7 @@ public class UIController : MonoBehaviour
                 default:
                     if (GameController.GetGameState() == GameState.Wait)
                     {
+                        mobilePadPanel.SetActive(isMobileDevice);
                         titlePanel.SetActive(false);
                         waitingPanel.SetActive(true);
                         startPanel.SetActive(false);
@@ -73,10 +81,11 @@ public class UIController : MonoBehaviour
                     }
                     else if (GameController.GetGameState() == GameState.Start)
                     {
+                        mobilePadPanel.SetActive(isMobileDevice);
                         titlePanel.SetActive(false);
                         waitingPanel.SetActive(false);
                         startPanel.SetActive(true);
-                        guidePanel.SetActive(true);
+                        guidePanel.SetActive(!isMobileDevice);
                         timerPanel.SetActive(true);
                         resultPanel.SetActive(false);
 
@@ -84,6 +93,7 @@ public class UIController : MonoBehaviour
                     }
                     else if (GameController.GetGameState() == GameState.End)
                     {
+                        mobilePadPanel.SetActive(isMobileDevice);
                         titlePanel.SetActive(false);
                         waitingPanel.SetActive(false);
                         startPanel.SetActive(false);
@@ -93,6 +103,7 @@ public class UIController : MonoBehaviour
                     }
                     else
                     {
+                        mobilePadPanel.SetActive(false);
                         titlePanel.SetActive(false);
                         waitingPanel.SetActive(false);
                         startPanel.SetActive(false);
@@ -104,6 +115,16 @@ public class UIController : MonoBehaviour
             }
             activeSceneName = sceneName;
             currentGameState = gameState;
+        }
+
+        if (waitingPanel.activeSelf)
+        {
+            if (roomCapacity == 0)
+            {
+                roomCapacity = GameController.GetRoomCapacity();
+            }
+            int playerCount = PlayersController.GetPlayerCount();
+            waitingText.text = $"Waiting for other players...({playerCount}/{roomCapacity})";
         }
     }
 

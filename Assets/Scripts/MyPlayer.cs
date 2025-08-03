@@ -3,9 +3,24 @@
 // 操作対象のプレイヤークラス
 public class MyPlayer : Player
 {
+    const KeyCode keyJump = KeyCode.J;
+    const KeyCode keyInteractive = KeyCode.H;
+    const KeyCode keyKick = KeyCode.K;
+
+    [SerializeField]
+    bool isGrounded;
+
+    bool isMobileDevice;
+
+    bool isJump;
     bool isInteractive;
     bool isKick;
     bool isMove;
+
+    float axisH;
+    float axisV;
+
+    Vector3 move;
 
     // Start is called before the first frame update
     protected override void Start()
@@ -13,11 +28,29 @@ public class MyPlayer : Player
         base.Start();
 
         SetIsMyself(true);
+
+        isMobileDevice = GameController.IsMobileDevice();
     }
 
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
+
+        // 移動
+        rbody.velocity = move;
+
+        // 旋回
+        transform.Rotate(0, axisH * turnFactor * Time.fixedDeltaTime, 0);
+
+        // 接地フラグ更新
+        isGrounded = Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, 1f);
+
+        if (isJump)
+        {
+            float jumpVelocity = Mathf.Sqrt(2f * jumpFactor * Mathf.Abs(Physics.gravity.y));
+            rbody.velocity = new Vector3(rbody.velocity.x, jumpVelocity, rbody.velocity.z);
+        }
+        isJump = false;
 
         if (isInteractive)
         {
@@ -64,45 +97,78 @@ public class MyPlayer : Player
     {
         isMove = false;
 
-        float axisH = Input.GetAxis("Horizontal");
-        transform.Rotate(0, axisH * turnFactor * Time.deltaTime, 0);
+        if (isMobileDevice)
+        {
+            MobilePadStick.SetMobileAxis(ref axisH, ref axisV);
+        }
+        else
+        {
+            axisH = Input.GetAxis("Horizontal");
+            axisV = Input.GetAxis("Vertical");
+        }
 
-        float axisV = Input.GetAxis("Vertical");
-        float moveZ = axisV > 0f ? axisV * moveFactor : 0;
-
-        if (moveZ != 0)
+        if (axisV != 0)
         {
             isMove = true;
 
             switch (currentEvent)
             {
                 case PlayerEvent.Carrying:
-                    moveZ *= 0.5f;
+                    axisV *= 0.75f;
                     break;
 
                 case PlayerEvent.Kicking:
-                    moveZ *= 0.5f;
+                    axisV *= 0.5f;
                     break;
 
                 case PlayerEvent.Throwing:
-                    moveZ *= 0.25f;
+                    axisV *= 0.25f;
                     break;
             }
         }
 
-        Vector3 moveGlobal = transform.TransformDirection(new Vector3(0, rbody.velocity.y, moveZ));
-        rbody.velocity = moveGlobal;
-
-        // なんかアクション入力 
-        if (Input.GetKeyDown(KeyCode.E))
+        if (isMobileDevice)
         {
-            isInteractive = true;
+            // 移動と旋回が一体になるので左右方向の移動速度を補完
+            move = transform.TransformDirection(new Vector3(0, rbody.velocity.y, axisV * (Mathf.Abs(axisH) + 1f) * moveFactor));
+
+            if (!isJump && MobilePadButton.IsJump() && isGrounded && currentEvent != PlayerEvent.Carrying)
+            {
+                isJump = true;
+            }
+
+            if (!isInteractive && MobilePadButton.IsInteractive())
+            {
+                isInteractive = true;
+            }
+
+            if (!isKick && MobilePadButton.IsKick())
+            {
+                isKick = true;
+            }
         }
-
-        // キック入力
-        if (Input.GetKeyDown(KeyCode.Space))
+        else
         {
-            isKick = true;
+            // 移動と旋回は独立
+            move = transform.TransformDirection(new Vector3(0, rbody.velocity.y, axisV * moveFactor));
+
+            // ジャンプ
+            if (!isJump && Input.GetKeyDown(keyJump) && isGrounded && currentEvent != PlayerEvent.Carrying)
+            {
+                isJump = true;
+            }
+
+            // なんかアクション入力 
+            if (!isInteractive && Input.GetKeyDown(keyInteractive))
+            {
+                isInteractive = true;
+            }
+
+            // キック入力
+            if (!isKick && Input.GetKeyDown(keyKick))
+            {
+                isKick = true;
+            }
         }
     }
 
@@ -162,7 +228,7 @@ public class MyPlayer : Player
                 break;
 
             case PlayerEvent.Throwing:
-                timerResetEvent = 0.75f;
+                timerResetEvent = 1f;
                 eventItem = item;
                 break;
         }
