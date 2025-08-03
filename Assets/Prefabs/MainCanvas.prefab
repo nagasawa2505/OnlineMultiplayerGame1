@@ -2163,7 +2163,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3649641891638075607}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cccee157078b054409a6d9ec582e21e1, type: 3}
+  m_Script: {fileID: 11500000, guid: a6bd3703493ee8142b66c0a6f616a640, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &3854040365383806010
@@ -2521,7 +2521,7 @@ GameObject:
   - component: {fileID: 5365015997688729247}
   - component: {fileID: 7765472189958342728}
   - component: {fileID: 8141551811572570341}
-  - component: {fileID: 2521054666772707747}
+  - component: {fileID: 2916627090826212539}
   m_Layer: 5
   m_Name: MobileStick
   m_TagString: Untagged
@@ -2603,8 +2603,8 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 2521054666772707747}
-          m_TargetAssemblyTypeName: MobileStick, Assembly-CSharp
+        - m_Target: {fileID: 2916627090826212539}
+          m_TargetAssemblyTypeName: MobilePadStick, Assembly-CSharp
           m_MethodName: PadDown
           m_Mode: 1
           m_Arguments:
@@ -2619,8 +2619,8 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 2521054666772707747}
-          m_TargetAssemblyTypeName: MobileStick, Assembly-CSharp
+        - m_Target: {fileID: 2916627090826212539}
+          m_TargetAssemblyTypeName: MobilePadStick, Assembly-CSharp
           m_MethodName: PadUp
           m_Mode: 1
           m_Arguments:
@@ -2635,8 +2635,8 @@ MonoBehaviour:
     callback:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 2521054666772707747}
-          m_TargetAssemblyTypeName: MobileStick, Assembly-CSharp
+        - m_Target: {fileID: 2916627090826212539}
+          m_TargetAssemblyTypeName: MobilePadStick, Assembly-CSharp
           m_MethodName: PadDrag
           m_Mode: 1
           m_Arguments:
@@ -2647,7 +2647,7 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
---- !u!114 &2521054666772707747
+--- !u!114 &2916627090826212539
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2656,7 +2656,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4292989678224180872}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50fc2d96a6f091846b65608c51f0533d, type: 3}
+  m_Script: {fileID: 11500000, guid: 1849b22118eba8d468c66b46c587d6b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &4651913151938991512

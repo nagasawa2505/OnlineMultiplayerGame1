@@ -42,12 +42,12 @@ public static class PlayersController
         if (teamNum % 2 == 0)
         {
             playerRotation = Quaternion.Euler(0, 180, 0);
-            playerPosZ = 45;
+            playerPosZ = 40;
         }
         else
         {
             playerRotation = Quaternion.identity;
-            playerPosZ = -45;
+            playerPosZ = -40;
         }
 
         // プレイヤー生成
