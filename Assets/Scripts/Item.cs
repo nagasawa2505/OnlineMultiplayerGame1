@@ -25,6 +25,8 @@ public class Item : SynchronizedObject
     {
         rbody = GetComponent<Rigidbody>();
         moveSqrThreshold = positionThreshold * positionThreshold;
+
+        SetSyncState(SyncState.ReceiveOnly);
     }
 
     protected override void FixedUpdate()

@@ -264,7 +264,7 @@ public partial class GameController : MonoBehaviour
 
     public static bool IsMobileDevice()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL
         return IsMobile() == 1;
 #else
         return Application.isMobilePlatform;
