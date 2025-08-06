@@ -1,4 +1,9 @@
 # ![ゲーム概要画像](readme_img/logo.png)<br>アストロラッシュ!!
+GitHub: https://github.com/nagasawa2505/OnlineMultiplayerGame1
+<br> 
+WebGL: https://xa-26483.net/astrorush/
+<br>
+
 宇宙での資源争奪戦！
 - 2チームに分かれて遊ぶオンライン対戦ゲーム
 - プレイ人数は2人、4人、6人のいずれか
