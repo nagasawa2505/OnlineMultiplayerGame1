@@ -1,12 +1,44 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class CameraController : MonoBehaviour
 {
+    static CameraController self;
+
     Transform myPlayer;
     const float offsetFront = 5f;
     const float offsetTop = 2.5f;
     const float followSpeed = 7.5f;
     const float rotateSpeed = 7.5f;
+
+    public bool isTitle;
+
+    void Awake()
+    {
+        if (self != null && self != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        self = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    void Start()
+    {
+        if (SceneManager.GetActiveScene().name == "Title")
+        {
+            isTitle = true;
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (isTitle)
+        {
+            transform.Rotate(Vector3.right, 2.5f * Time.fixedDeltaTime);
+        }
+    }
 
     void LateUpdate()
     {

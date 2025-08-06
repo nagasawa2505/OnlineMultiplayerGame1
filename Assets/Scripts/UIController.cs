@@ -75,7 +75,7 @@ public class UIController : MonoBehaviour
                         titlePanel.SetActive(false);
                         waitingPanel.SetActive(true);
                         startPanel.SetActive(false);
-                        guidePanel.SetActive(false);
+                        guidePanel.SetActive(!isMobileDevice);
                         timerPanel.SetActive(false);
                         resultPanel.SetActive(false);
                     }

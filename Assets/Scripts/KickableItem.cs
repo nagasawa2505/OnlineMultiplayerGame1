@@ -32,7 +32,7 @@ public class KickableItem : Item
         }
 
         // プレイヤーに接触したら止まる
-        rbody.drag = 2f;
+        rbody.drag = 1f;
 
         base.OnTriggerEnter(other);
     }
