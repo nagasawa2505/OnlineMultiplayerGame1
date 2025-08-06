@@ -12,6 +12,10 @@ public class Item : SynchronizedObject
     protected bool isUpdated;
     protected bool isMoving;
 
+    protected bool isPosted;
+    protected float timerAfterPosted;
+    protected const float DestroySecAfterPosted = 30f;
+
     [SerializeField]
     protected bool isGrounded;
 
@@ -46,6 +50,15 @@ public class Item : SynchronizedObject
             transform.localRotation = Quaternion.Slerp(transform.localRotation, receivedRotation, rotationWeight);
         }
         isUpdated = false;
+
+        if (isPosted)
+        {
+            timerAfterPosted += Time.fixedDeltaTime;
+            if (timerAfterPosted >= DestroySecAfterPosted)
+            {
+                Die();
+            }
+        }
     }
 
     // Update is called once per frame
@@ -105,6 +118,22 @@ public class Item : SynchronizedObject
                 rbody.isKinematic = false;
                 break;
         }
+    }
+
+    public virtual void Posted()
+    {
+        isPosted = true;
+    }
+
+    public virtual void Unposted()
+    {
+        isPosted = false;
+        // timerAfterPosted = 0;
+    }
+
+    protected virtual void Die()
+    {
+        Destroy(gameObject);
     }
 
     public virtual void SetIsUpdated(bool either)

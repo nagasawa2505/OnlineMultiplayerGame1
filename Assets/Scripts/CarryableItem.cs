@@ -32,6 +32,16 @@ public class CarryableItem : KickableItem
         base.OnTriggerEnter(other);
     }
 
+    protected override void Die()
+    {
+        if (carryingPlayer != null)
+        {
+            carryingPlayer.DropItem();
+        }
+
+        base.Die();
+    }
+
     // 蹴られる
     public override void Kicked(Player player, float kickFactor)
     {

@@ -60,6 +60,8 @@ public class Post : MonoBehaviour
             score[itemId] = 1;
             currentScore += item.points;
         }
+
+        item.Posted();
     }
 
     void OnTriggerExit(Collider other)
@@ -85,6 +87,8 @@ public class Post : MonoBehaviour
                 currentScore -= item.points;
             }
         }
+
+        item.Unposted();
     }
 
     public int GetScore()
