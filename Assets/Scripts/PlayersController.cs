@@ -113,12 +113,7 @@ public static class PlayersController
             }
             else
             {
-                int itemId = eventItem.GetItemId();
-                dc.SetPlayerEventAndItem(evt, itemId);
-                dc.AddItemId(itemId);
-                dc.AddItemPrefabId(eventItem.GetPrefabId());
-                dc.AddItemPosition(eventItem.transform.position);
-                dc.AddItemRotation(eventItem.transform.localRotation);
+                dc.SetPlayerEventAndItem(evt, eventItem.GetItemId());
             }
         }
 

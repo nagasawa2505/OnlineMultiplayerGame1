@@ -80,7 +80,6 @@ public partial class GameController : MonoBehaviour
         {
             case "Title":
                 {
-                    ItemsController.SpawnItem(0, new Vector3(0, spawnAxisY, 0), Quaternion.identity, GetTransform());
                     break;
                 }
             case "Scene1":
@@ -95,6 +94,7 @@ public partial class GameController : MonoBehaviour
                     ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
                     ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
                     ItemsController.SpawnItem(2, new Vector3(0, spawnAxisY, 0), Quaternion.identity, GetTransform());
+
                     break;
                 }
             default:

@@ -73,6 +73,15 @@ public class OtherPlayer : Player
                 }
                 break;
 
+            case PlayerEvent.Dropping:
+                timerResetEvent = 0.25f;
+                eventItem = targetItem;
+                if (currentEvent == PlayerEvent.Carrying)
+                {
+                    DropItem();
+                }
+                break;
+
             case PlayerEvent.Throwing:
                 timerResetEvent = 1f;
                 eventItem = targetItem;

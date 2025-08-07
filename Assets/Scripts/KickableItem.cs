@@ -26,7 +26,7 @@ public class KickableItem : Item
     protected override void OnTriggerEnter(Collider other)
     {
         // プレイヤーに接触したら止まる
-        rbody.drag = 0.25f;
+        rbody.drag = 0.5f;
 
         base.OnTriggerEnter(other);
     }

@@ -5,6 +5,7 @@ public enum PlayerEvent : int
     None,
     Kicking,
     Carrying,
+    Dropping,
     Throwing,
 }
 
@@ -186,12 +187,12 @@ public abstract class Player : SynchronizedObject
     }
 
     // 物を捨てる
-    public virtual void DropItem()
+    public virtual CarryableItem DropItem()
     {
         // 何も持ってなければ終了
         if (eventItem == null)
         {
-            return;
+            return null;
         }
 
         // アイテムの親を元に戻す
@@ -199,6 +200,8 @@ public abstract class Player : SynchronizedObject
 
         // イベント初期化を開始
         isStopTimerResetEvent = false;
+
+        return (CarryableItem)eventItem;
     }
 
     // 物を投げ捨てる

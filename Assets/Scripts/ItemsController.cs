@@ -77,7 +77,8 @@ public static class ItemsController
             }
 
             // 自分の担当分以外はとばす
-            if (!item.GetOwner().IsMyself())
+            Player owner = item.GetOwner();
+            if (owner != null && !owner.IsMyself())
             {
                 continue;
             }

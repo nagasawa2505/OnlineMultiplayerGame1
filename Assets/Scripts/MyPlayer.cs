@@ -196,6 +196,19 @@ public class MyPlayer : Player
         return item;
     }
 
+    // 物を捨てる
+    public override CarryableItem DropItem()
+    {
+        CarryableItem item = base.DropItem();
+        if (item != null)
+        {
+            // イベント更新
+            SetSendPlayerEvent(PlayerEvent.Dropping, item);
+        }
+
+        return item;
+    }
+
     // 物を投げ捨てる
     protected override CarryableItem ThrowItem()
     {
@@ -223,6 +236,11 @@ public class MyPlayer : Player
                 break;
 
             case PlayerEvent.Carrying:
+                timerResetEvent = 0.25f;
+                eventItem = item;
+                break;
+
+            case PlayerEvent.Dropping:
                 timerResetEvent = 0.25f;
                 eventItem = item;
                 break;

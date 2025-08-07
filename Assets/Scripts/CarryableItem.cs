@@ -7,9 +7,6 @@ public class CarryableItem : KickableItem
     [SerializeField]
     protected Player carryingPlayer;
 
-    // 持たれたときの相対位置
-    protected Vector3 attachOffset = new Vector3(0, 1.5f, 1f);
-
     // 捨てられたら戻る親元
     protected Transform originalParent;
 
@@ -22,9 +19,20 @@ public class CarryableItem : KickableItem
         originalParent = transform.parent;
     }
 
+    protected override void FixedUpdate()
+    {
+        base.FixedUpdate();
+
+        if (isFixedState && carryingPlayer != null)
+        {
+            // 位置調整
+            transform.position = carryingPlayer.transform.position + carryingPlayer.transform.forward * 1f + carryingPlayer.transform.up * 1.5f;
+        }
+    }
+
     protected override void OnTriggerEnter(Collider other)
     {
-        if (carryingPlayer != null)
+        if (isFixedState || carryingPlayer != null)
         {
             return;
         }
@@ -34,7 +42,7 @@ public class CarryableItem : KickableItem
 
     protected override void Die()
     {
-        if (carryingPlayer != null)
+        if (isFixedState || carryingPlayer != null)
         {
             carryingPlayer.DropItem();
         }
@@ -45,7 +53,7 @@ public class CarryableItem : KickableItem
     // 蹴られる
     public override void Kicked(Player player, float kickFactor)
     {
-        if (carryingPlayer != null)
+        if (isFixedState || carryingPlayer != null)
         {
             return;
         }
@@ -56,7 +64,7 @@ public class CarryableItem : KickableItem
     // プレイヤーに持たれる
     public bool Attach(Player player)
     {
-        if (carryingPlayer != null)
+        if (isFixedState || carryingPlayer != null)
         {
             return false;
         }
@@ -72,9 +80,6 @@ public class CarryableItem : KickableItem
 
         // プレイヤーの配下になる
         transform.SetParent(player.transform);
-
-        // 位置調整
-        transform.localPosition = attachOffset;
 
         if (player.IsMyself())
         {
@@ -100,7 +105,7 @@ public class CarryableItem : KickableItem
         // 持ち主解除
         carryingPlayer = null;
 
-        isFixedState= false;
+        isFixedState = false;
     }
 
     // プレイヤーから投げ捨てられる
@@ -118,10 +123,10 @@ public class CarryableItem : KickableItem
                 return;
             }
 
+            carryingPlayer = null;
             rbody.isKinematic = false;
-            rbody.AddForce(player.transform.forward * 5f + Vector3.up * 7.5f, ForceMode.VelocityChange);
+            rbody.AddForce(player.transform.forward * 5f + Vector3.up * 7.5f, ForceMode.VelocityChange);   
         }
-
         Invoke("Dettach", 1f);
     }
 }

@@ -7,12 +7,13 @@ public class Item : SynchronizedObject
     Player owner;
 
     [SerializeField]
+    protected bool isFixedState;
+
+    [SerializeField]
     protected bool isGrounded;
 
     protected int itemId;
     protected int prefabId;
-
-    protected bool isFixedState;
 
     public int points;
     public float groundCheckDistance;
