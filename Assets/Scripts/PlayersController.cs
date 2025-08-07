@@ -82,9 +82,11 @@ public static class PlayersController
     // 送信内容をセット
     public static void SetSendData(DataContainer dc)
     {
+        GameState state = GameController.GetGameState();
+
         // 位置をセット
         Vector3 position = myPlayer.transform.position;
-        if (myPlayer.IsSentPositionChanged(ref position))
+        if (state == GameState.Wait || myPlayer.IsSentPositionChanged(ref position))
         {
             dc.SetPlayerPosition(position);
         }
@@ -161,10 +163,6 @@ public static class PlayersController
         // イベントをセット
         Item item = ItemsController.GetItem(itemId);
         player.SetReceivedPlayerEvent(evt, item);
-        if (item != null)
-        {
-            item.SetSyncState(SyncState.ReceiveOnly);
-        }
 
         // 通信切断検知タイマー更新
         player.ResetExitTimer();
@@ -196,6 +194,18 @@ public static class PlayersController
     public static int GetPlayerCount()
     {
         return players.Count;
+    }
+
+    // プレイヤーを返す
+    public static Player GetPlayer(string clientId)
+    {
+       Player player;
+       if (players.TryGetValue(clientId, out player))
+        {
+            return player;
+        }
+
+       return null;
     }
 
     public static void Clear()

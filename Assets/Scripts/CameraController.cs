@@ -26,6 +26,8 @@ public class CameraController : MonoBehaviour
 
     void Start()
     {
+        myPlayer = null;
+
         if (SceneManager.GetActiveScene().name == "Title")
         {
             isTitle = true;

@@ -77,8 +77,7 @@ public static class ItemsController
             }
 
             // 自分の担当分以外はとばす
-            SyncState state = item.GetSyncState();
-            if (state != SyncState.SendOnly)
+            if (!item.GetOwner().IsMyself())
             {
                 continue;
             }
@@ -99,6 +98,8 @@ public static class ItemsController
     // 受信内容をセット
     public static void SetReceivedData(DataContainer dc)
     {
+        string clientId = dc.GetClientId();
+        Player sender = PlayersController.GetPlayer(clientId);
         List<int> ids = dc.GetItemIds();
         List<int> prefabIds = dc.GetItemPrefabIds();
         List<Vector3> positions = dc.GetItemPositions();
@@ -113,11 +114,10 @@ public static class ItemsController
 
             if (items.TryGetValue(itemId, out Item item))
             {
-                // ローカルより受信内容を優先する
-                SyncState state = item.GetSyncState();
-                if (state != SyncState.ReceiveOnly)
+                // アイテムの情報送信者を更新
+                if (sender != null && !item.IsFixedState())
                 {
-                    item.SetSyncState(SyncState.ReceiveOnly);
+                    item.SetOwner(sender);
                 }
 
                 // 位置と回転をセット
@@ -150,11 +150,16 @@ public static class ItemsController
     }
 
     // 全アイテムの同期状態を変更する
-    public static void SetSyncStateAll(SyncState syncState)
+    public static void OwnAllItems(Player player)
     {
+        if (player == null)
+        {
+            return;
+        }
+
         foreach (Item item in items.Values)
         {
-            item.SetSyncState(syncState);
+            item.SetOwner(player);
         }
     }
 }

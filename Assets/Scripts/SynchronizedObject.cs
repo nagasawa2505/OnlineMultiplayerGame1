@@ -1,18 +1,8 @@
 ﻿using UnityEngine;
 
-// 同期状態
-public enum SyncState
-{
-    ReceiveOnly,   // 受信のみ
-    SendOnly,      // 送信のみ
-}
-
 // 通信で同期されるものクラス
 public abstract class SynchronizedObject : MonoBehaviour
 {
-    [SerializeField]
-    SyncState syncState;
-
     protected float positionThreshold = 0.01f;
     protected float rotationThreshold = 1f;
 
@@ -97,15 +87,5 @@ public abstract class SynchronizedObject : MonoBehaviour
     public virtual void SetReceivedRotation(Quaternion rotation)
     {
         receivedRotation = rotation;
-    }
-
-    public virtual void SetSyncState(SyncState state)
-    {
-        syncState = state;
-    }
-
-    public virtual SyncState GetSyncState()
-    {
-        return syncState;
     }
 }

@@ -3,15 +3,15 @@
 // 持ち運べるアイテムクラス
 public class CarryableItem : KickableItem
 {
+    // 持ってるプレイヤー
+    [SerializeField]
+    protected Player carryingPlayer;
+
     // 持たれたときの相対位置
     protected Vector3 attachOffset = new Vector3(0, 1.5f, 1f);
 
     // 捨てられたら戻る親元
     protected Transform originalParent;
-
-    // 持ってるプレイヤー
-    [SerializeField]
-    protected Player carryingPlayer;
 
     // Start is called before the first frame update
     protected override void Start()
@@ -61,15 +61,6 @@ public class CarryableItem : KickableItem
             return false;
         }
 
-        if (player.IsMyself())
-        {
-            SetSyncState(SyncState.SendOnly);
-        }
-        else
-        {
-            SetSyncState(SyncState.ReceiveOnly);
-        }
-
         // 持ち主セット
         carryingPlayer = player;
 
@@ -84,6 +75,12 @@ public class CarryableItem : KickableItem
 
         // 位置調整
         transform.localPosition = attachOffset;
+
+        if (player.IsMyself())
+        {
+            SetOwner(player);
+            isFixedState = true;
+        }
 
         return true;
     }
@@ -102,6 +99,8 @@ public class CarryableItem : KickableItem
 
         // 持ち主解除
         carryingPlayer = null;
+
+        isFixedState= false;
     }
 
     // プレイヤーから投げ捨てられる
@@ -119,13 +118,8 @@ public class CarryableItem : KickableItem
                 return;
             }
 
-            SetSyncState(SyncState.SendOnly);
-
+            rbody.isKinematic = false;
             rbody.AddForce(player.transform.forward * 5f + Vector3.up * 7.5f, ForceMode.VelocityChange);
-        }
-        else
-        {
-            SetSyncState(SyncState.ReceiveOnly);
         }
 
         Invoke("Dettach", 1f);

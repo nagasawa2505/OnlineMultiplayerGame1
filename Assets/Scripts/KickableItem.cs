@@ -3,7 +3,7 @@
 // 蹴れるアイテムクラス
 public class KickableItem : Item
 {
-    // 蹴ってるプレイヤー
+    // 最後に蹴ったプレイヤー
     protected Player kickingPlayer;
 
     // Start is called before the first frame update
@@ -25,14 +25,8 @@ public class KickableItem : Item
 
     protected override void OnTriggerEnter(Collider other)
     {
-        // 蹴られた直後なら終了
-        if (kickingPlayer != null)
-        {
-            return;
-        }
-
         // プレイヤーに接触したら止まる
-        rbody.drag = 1f;
+        rbody.drag = 0.25f;
 
         base.OnTriggerEnter(other);
     }
@@ -47,29 +41,18 @@ public class KickableItem : Item
 
         if (player.IsMyself())
         {
-            if (kickingPlayer != null)
-            {
-                return;
-            }
-
-            // 同期状態を変更
-            SetSyncState(SyncState.SendOnly);
-
             rbody.AddForce(player.transform.forward * kickFactor, ForceMode.Impulse);
 
-            Invoke("UnsetKickingPlayer", 0.05f);
-
             kickingPlayer = player;
-        }
-        else
-        {
-            // 同期状態を変更
-            SetSyncState(SyncState.ReceiveOnly);
+
+            SetOwner(player);
+            isFixedState = true;
+            Invoke("UnsetIsFixedState", 1.5f);
         }
     }
 
-    protected virtual void UnsetKickingPlayer()
+    void UnsetIsFixedState()
     {
-        kickingPlayer = null;
+        isFixedState = false;
     }
 }

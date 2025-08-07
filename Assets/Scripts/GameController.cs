@@ -95,7 +95,6 @@ public partial class GameController : MonoBehaviour
                     ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
                     ItemsController.SpawnItem(1, new Vector3(UnityEngine.Random.Range(-maxAxisX, maxAxisX), spawnAxisY, UnityEngine.Random.Range(-maxAxisZ, maxAxisZ)), Quaternion.identity, GetTransform());
                     ItemsController.SpawnItem(2, new Vector3(0, spawnAxisY, 0), Quaternion.identity, GetTransform());
-
                     break;
                 }
             default:
@@ -172,7 +171,7 @@ public partial class GameController : MonoBehaviour
             MakeScene();
 
             // すべてのアイテム情報を送信する
-            ItemsController.SetSyncStateAll(SyncState.SendOnly);
+            ItemsController.OwnAllItems(PlayersController.GetMyPlayer());
         }
     }
 

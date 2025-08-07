@@ -3,8 +3,16 @@
 // アイテムクラス
 public class Item : SynchronizedObject
 {
+    [SerializeField]
+    Player owner;
+
+    [SerializeField]
+    protected bool isGrounded;
+
     protected int itemId;
     protected int prefabId;
+
+    protected bool isFixedState;
 
     public int points;
     public float groundCheckDistance;
@@ -16,9 +24,6 @@ public class Item : SynchronizedObject
     protected float timerAfterPosted;
     protected const float DestroySecAfterPosted = 30f;
 
-    [SerializeField]
-    protected bool isGrounded;
-
     protected float positionWeight = 0.75f;
     protected float rotationWeight = 0.75f;
     protected float moveSqrThreshold;
@@ -29,8 +34,6 @@ public class Item : SynchronizedObject
     {
         rbody = GetComponent<Rigidbody>();
         moveSqrThreshold = positionThreshold * positionThreshold;
-
-        SetSyncState(SyncState.ReceiveOnly);
     }
 
     protected override void FixedUpdate()
@@ -51,6 +54,7 @@ public class Item : SynchronizedObject
         }
         isUpdated = false;
 
+        // ゴール配置済み
         if (isPosted)
         {
             timerAfterPosted += Time.fixedDeltaTime;
@@ -74,8 +78,7 @@ public class Item : SynchronizedObject
 
     protected override void OnTriggerEnter(Collider other)
     {
-        Player player = other.GetComponent<Player>();
-        if (player == null)
+        if (isFixedState)
         {
             return;
         }
@@ -85,13 +88,17 @@ public class Item : SynchronizedObject
             return;
         }
 
-        if (player.IsMyself())
+        Player player = other.GetComponent<Player>();
+        if (player != null)
         {
-            SetSyncState(SyncState.SendOnly);
+            SetOwner(player);
+            return;
         }
-        else
+
+        Item item = other.GetComponent<Item>();
+        if (item != null && !item.IsFixedState())
         {
-            SetSyncState(SyncState.ReceiveOnly);
+            item.SetOwner(GetOwner());
         }
     }
 
@@ -100,24 +107,22 @@ public class Item : SynchronizedObject
         base.OnTriggerExit(other);
     }
 
-    public override void SetSyncState(SyncState state)
+    public virtual void SetOwner(Player player)
     {
-        base.SetSyncState(state);
-
-        switch (state)
+        if (player != null)
         {
-            case SyncState.ReceiveOnly:
-                rbody.isKinematic = true;
-                break;
-
-            case SyncState.SendOnly:
-                rbody.isKinematic = false;
-                break;
-
-            default:
-                rbody.isKinematic = false;
-                break;
+            owner = player;
         }
+    }
+
+    public virtual Player GetOwner()
+    {
+        return owner;
+    }
+
+    public virtual bool IsFixedState()
+    {
+        return isFixedState;
     }
 
     public virtual void Posted()
